@@ -11,6 +11,12 @@ export default {
       fontFamily: {
         sans: ["var(--font-geist-sans)", ...fontFamily.sans],
       },
+      colors: {
+        lumon: {
+          blue: "#06396C",
+          "light-blue": "#D2E1E7",
+        },
+      },
     },
   },
   plugins: [],

@@ -1,0 +1,10 @@
+
+- our frontend is in the apps/web folder, not the base directory.
+- please do not remove any features that are not directly related to what we just asked about.
+- use our tech stack always whenever possible: shadcn, lucide, nextjs, tailwind, typescript, trpc, drizzle, zod, etc
+- if you use icons use the lucide icons, don't create your own SVGs, put placeholders if you can't find the react icon you want
+- if you use a library, use the latest version
+- if you're using react client side hooks like useState, useEffect, etc, make sure the component is a client component
+- use kebab-case for file names
+- dont generate raw sql files, we will use drizzle-kit generate and migrations
+- comment out code that you think isn't needed anymore, don't delete it, just in case we need it later. we will determine if it should be deleted.
