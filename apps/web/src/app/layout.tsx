@@ -18,8 +18,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
-      <body>
+    <html lang="en" suppressHydrationWarning className={GeistSans.variable}>
+      <body className="bg-background min-h-screen">
         <TooltipProvider>
           <ThemeProvider
             attribute="class"

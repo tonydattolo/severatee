@@ -5,14 +5,14 @@ import { env } from "@/env";
 import { schema } from "./schemas/index";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 
-if (!env.DRIZZLE_DB_URL) {
-  throw new Error("DRIZZLE_DB_URL is not set");
+if (!env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set");
 }
 
 // https://supabase.com/docs/guides/database/connecting-to-postgres#connecting-with-drizzle
 //https://supabase.com/dashboard/project/<project_id>/settings/database
 // Disable prefetch as it is not supported for "Transaction" pool mode
-const client = postgres(env.DRIZZLE_DB_URL, { prepare: false });
+const client = postgres(env.DATABASE_URL, { prepare: false });
 export const db = drizzle(client, { schema });
 
 const migrateDb = async () => {

@@ -36,7 +36,7 @@ export async function login(
     }
 
     if (data) {
-      revalidatePath("/waves/dashboard", "layout");
+      revalidatePath("/lumon/dashboard", "layout");
       return { message: "Login successful" };
     }
 
@@ -78,8 +78,8 @@ export async function signup(
   if (user) {
     // Check if the user's email is confirmed
     if (user.email_confirmed_at) {
-      revalidatePath("/waves/dashboard", "layout");
-      redirect("/waves/dashboard");
+      revalidatePath("/lumon/dashboard", "layout");
+      redirect("/lumon/dashboard");
     } else {
       return {
         message: `Verification email sent to ${user.email}. Please check your inbox.`,

@@ -6,11 +6,12 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "@/server/db/db";
+import { createClient } from "@/app/utils/supabase/server";
 
 /**
  * 1. CONTEXT
@@ -25,9 +26,34 @@ import { db } from "@/server/db/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  return {
-    db,
+  const supabase = await createClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  let database = null;
+  try {
+    database = db;
+  } catch (error) {
+    console.error("Failed to initialize main DB:", error);
+  }
+
+  const baseContext = {
+    db: database,
+    session,
     ...opts,
+  };
+
+  if (!session?.user?.id) {
+    return {
+      ...baseContext,
+      user: null,
+    };
+  }
+
+  return {
+    ...baseContext,
+    user: session.user,
   };
 };
 
@@ -104,3 +130,32 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * This is the base piece you use to build new queries and mutations on your tRPC API. It guarantees
+ * that a user querying is authorized and logged in.
+ */
+export const authenticatedProcedure = t.procedure.use(
+  async function isAuthed(opts) {
+    const supabase = await createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const { ctx } = opts;
+    // `ctx.user` is nullable
+    if (!session?.user) {
+      //     ^?
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    return opts.next({
+      ctx: {
+        // ✅ user value is known to be non-null now
+        user: session.user,
+        // ^?
+      },
+    });
+  },
+);
