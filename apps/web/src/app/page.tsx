@@ -14,7 +14,7 @@ export default async function Home() {
         <div className="bg-lumon-blue absolute inset-0 z-0"></div>
         <div className="relative z-10 container mx-auto px-4">
           <Image
-            src="/img/lumon-1.png"
+            src="/img/severatee-0.png"
             alt="Lumon Industries"
             width={701}
             height={254}
@@ -35,15 +35,11 @@ export default async function Home() {
             </span>
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Button className="bg-lumon-light-blue hover:bg-lumon-light-blue/90 text-lumon-blue rounded-sm px-6">
-              Begin Refinement <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              className="border-lumon-light-blue text-lumon-blue hover:bg-lumon-light-blue/80 rounded-sm px-6"
-            >
-              Learn About Severance
-            </Button>
+            <Link href="/auth/login">
+              <Button className="bg-lumon-light-blue hover:bg-lumon-light-blue/90 text-lumon-blue rounded-sm px-6">
+                Begin Refinement <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

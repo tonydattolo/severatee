@@ -2,6 +2,12 @@
 
 This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
 
+## Use of TEEs
+
+"Privy embedded wallets are built on globally distributed infrastructure to ensure high uptime and low latency. They leverage secure hardware (TEEs) and client-side computation to ensure only the rightful owner can control their wallet or access its keys."
+
+Nillion SecretVault is a TEE that is used to secure the computation of the SeveraTEE.
+
 ## Overview
 
 TEE‑track project concept—“Cold Harbor Vault”—that mirrors the Severance universe. In this simulation, “innies” perform secure data refinement tasks inside TEEs, while “outties” (managers) receive only aggregated insights and automated payments without direct visibility into the granular inner computations.

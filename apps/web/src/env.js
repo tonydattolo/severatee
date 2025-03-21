@@ -11,6 +11,10 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    PRIVY_APP_ID: z.string(),
+    PRIVY_CLIENT_ID: z.string(),
+    PRIVY_JWKS_ENDPOINT: z.string(),
+    PRIVY_API_KEY: z.string(),
   },
 
   /**
@@ -19,7 +23,11 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_PRIVY_APP_ID: z.string(),
+    NEXT_PUBLIC_PRIVY_CLIENT_ID: z.string(),
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string(),
+    // NEXT_PUBLIC_NODE_ENV: z.string().default("development"),
   },
 
   /**
@@ -29,7 +37,14 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    PRIVY_APP_ID: process.env.PRIVY_APP_ID,
+    PRIVY_CLIENT_ID: process.env.PRIVY_CLIENT_ID,
+    PRIVY_JWKS_ENDPOINT: process.env.PRIVY_JWKS_ENDPOINT,
+    PRIVY_API_KEY: process.env.PRIVY_API_KEY,
+    NEXT_PUBLIC_PRIVY_APP_ID: process.env.PRIVY_APP_ID,
+    NEXT_PUBLIC_PRIVY_CLIENT_ID: process.env.PRIVY_CLIENT_ID,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

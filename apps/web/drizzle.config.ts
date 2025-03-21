@@ -1,12 +1,20 @@
 import { type Config } from "drizzle-kit";
+import { defineConfig } from "drizzle-kit";
 
 import { env } from "@/env";
 
-export default {
-  schema: "./src/server/db/schema.ts",
+export default defineConfig({
+  schema: "./src/server/db/schemas",
+  out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["web_*"],
-} satisfies Config;
+  // tablesFilter: ["t3_*"],
+  schemaFilter: ["public", "auth", "storage"],
+  entities: {
+    roles: {
+      provider: "supabase",
+    },
+  },
+}) satisfies Config;
