@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   Scroll,
   Mail,
+  MessageSquareText,
 } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 
@@ -57,6 +58,11 @@ const navigation = [
     title: "Dashboard",
     icon: Layout,
     url: "/lumon/dashboard",
+  },
+  {
+    title: "Kier",
+    icon: MessageSquareText,
+    url: "/lumon/kier",
   },
   {
     title: "MDR Assigner",

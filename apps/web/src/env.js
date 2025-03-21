@@ -15,6 +15,9 @@ export const env = createEnv({
     PRIVY_CLIENT_ID: z.string(),
     PRIVY_JWKS_ENDPOINT: z.string(),
     PRIVY_API_KEY: z.string(),
+    CDP_API_KEY_NAME: z.string(),
+    CDP_API_KEY_PRIVATE_KEY: z.string(),
+    OPENAI_API_KEY: z.string(),
   },
 
   /**
@@ -45,6 +48,9 @@ export const env = createEnv({
     NEXT_PUBLIC_PRIVY_CLIENT_ID: process.env.PRIVY_CLIENT_ID,
     NEXT_PUBLIC_SUPABASE_URL: process.env.SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+    CDP_API_KEY_NAME: process.env.CDP_API_KEY_NAME,
+    CDP_API_KEY_PRIVATE_KEY: process.env.CDP_API_KEY_PRIVATE_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -1,31 +1,30 @@
-"use client";
+import { PrivyWalletProvider, PrivyWalletConfig } from "@coinbase/agentkit";
 
-import { PrivyProvider as BasePrivyProvider } from "@privy-io/react-auth";
-import { env } from "@/env";
+// Configure Wallet Provider
+const config: PrivyWalletConfig = {
+  appId: "PRIVY_APP_ID",
+  appSecret: "PRIVY_APP_SECRET",
+  chainId: "84532", // optional, defaults to 84532 (base-sepolia)
+  walletId: "PRIVY_WALLET_ID", // optional, otherwise a new wallet will be created
+  authorizationPrivateKey: PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY, // optional, required if your account is using authorization keys
+  authorizationKeyId: PRIVY_WALLET_AUTHORIZATION_KEY_ID, // optional, only required to create a new wallet if walletId is not provided
+};
 
-export default function PrivyProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <BasePrivyProvider
-      appId={env.NEXT_PUBLIC_PRIVY_APP_ID}
-      clientId={env.NEXT_PUBLIC_PRIVY_CLIENT_ID}
-      config={{
-        // Customize Privy's appearance in your app
-        appearance: {
-          theme: "light",
-          accentColor: "#676FFF",
-          logo: "/img/severatee-0.png",
-        },
-        // Create embedded wallets for users who don't have a wallet
-        embeddedWallets: {
-          createOnLogin: "users-without-wallets",
-        },
-      }}
-    >
-      {children}
-    </BasePrivyProvider>
-  );
-}
+const walletProvider = await PrivyWalletProvider.configureWithWallet(config);
+
+// const walletData = await walletProvider.exportWallet();
+
+// // walletData will be in the following format:
+// {
+//     walletId: string;
+//     authorizationKey: string | undefined;
+//     networkId: string | undefined;
+// }
+
+// By default, AgentKit supports the following basic wallet operations:
+
+//     get_wallet_details - Get details about the Wallet, like the address
+//     transfer - Transfer assets between addresses
+//     get_balance - Get the balance of an asset
+
+// You can add additional actions or action providers upon agent instantiation.

@@ -1,0 +1,67 @@
+Create a wallet
+From my server
+
+Privy enables your app to easily create server-side wallets on any EVM network or Solana.
+
+If the wallet is for a user, use wallet pregeneration instead to associate the wallet with user’s login methods.
+
+To create a wallet with the NodeJS SDK, use the create method from the Privy client’s walletApi class:
+Copy
+
+createWallet: (input: WalletApiCreateRequestType) => Promise<WalletApiCreateResponseType>
+
+Usage
+Copy
+
+const {id, address, chainType} = await privy.walletApi.create({chainType: 'ethereum'});
+
+Parameters
+
+The create method accepts as a parameter an input object with the following fields:
+​
+chainType
+'ethereum' | 'solana'
+required
+
+Chain type of the wallet to create.
+​
+authorizationKeyIds
+string[]
+
+List of authorization key IDs that should be allowed to approve transactions for the wallet.
+​
+authorizationThreshold
+number
+
+Number of authorization key signatures required to approve a transaction. This number must be less than or equal to the number of length of authorization_key_ids. If not specified, all keys in the authorization_key_ids list are required.
+​
+policyIds
+string[]
+
+List of policy IDs for policies that should be enforced on the wallet. Currently, only one policy is supported per wallet.
+​
+idempotencyKey
+string
+
+Idempotency key to identify a unique request.
+Returns
+​
+id
+string
+
+Unique ID of the created wallet. This will be the primary identifier when using the wallet in the future.
+​
+chainType
+'ethereum' | 'solana'
+
+Chain type of the created wallet.
+​
+address
+string
+
+Address of the created wallet.
+​
+policyIds
+string[]
+
+List of policy IDs for policies that are enforced on the wallet.
