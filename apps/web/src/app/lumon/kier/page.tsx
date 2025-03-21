@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, FormEvent } from "react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
@@ -13,7 +14,12 @@ import {
   ArrowUpIcon,
   Paperclip,
   PlusIcon,
+  ArrowLeftRight,
+  CircleDollarSign,
+  Wallet,
+  MessageCircleQuestion,
 } from "lucide-react";
+import { api } from "@/trpc/react";
 
 interface UseAutoResizeTextareaProps {
   minHeight: number;
@@ -70,17 +76,43 @@ function useAutoResizeTextarea({
 
 export default function Kier() {
   const [value, setValue] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const createChatMutation = api.chats.createChat.useMutation();
+
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 60,
     maxHeight: 200,
   });
 
+  const handleSubmit = async (e?: FormEvent) => {
+    e?.preventDefault();
+
+    if (!value.trim() || isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      // Create a new chat with the title "Praise Kier"
+      const newChat = await createChatMutation.mutateAsync({
+        title: "Praise Kier",
+      });
+
+      // Store the first message to send after navigation
+      sessionStorage.setItem("pendingMessage", value);
+
+      // Navigate to the chat page
+      router.push(`/lumon/kier/chat/${newChat?.id}`);
+    } catch (error) {
+      console.error("Failed to create chat:", error);
+      setIsSubmitting(false);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (value.trim()) {
-        setValue("");
-        adjustHeight(true);
+      if (value.trim() && !isSubmitting) {
+        handleSubmit();
       }
     }
   };
@@ -89,94 +121,97 @@ export default function Kier() {
     <div className="flex min-h-screen w-full flex-col items-center justify-center p-4">
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center space-y-8">
         <h1 className="text-lumon-terminal-text text-4xl font-bold">
-          What can I help you ship?
+          Praise Kier
         </h1>
 
         <div className="w-full">
-          <div className="border-lumon-terminal-text/20 bg-lumon-terminal-bg relative rounded-xl border">
-            <div className="overflow-y-auto">
-              <Textarea
-                ref={textareaRef}
-                value={value}
-                onChange={(e) => {
-                  setValue(e.target.value);
-                  adjustHeight();
-                }}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask v0 a question..."
-                className={cn(
-                  "w-full px-4 py-3",
-                  "resize-none",
-                  "bg-transparent",
-                  "border-none",
-                  "text-lumon-terminal-text text-sm",
-                  "focus:outline-none",
-                  "focus-visible:ring-0 focus-visible:ring-offset-0",
-                  "placeholder:text-lumon-terminal-text/50 placeholder:text-sm",
-                  "min-h-[60px]",
-                )}
-                style={{
-                  overflow: "hidden",
-                }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between p-3">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="group hover:bg-lumon-terminal-text/10 flex items-center gap-1 rounded-lg p-2 transition-colors"
-                >
-                  <Paperclip className="text-lumon-terminal-text h-4 w-4" />
-                  <span className="text-lumon-terminal-text/70 hidden text-xs transition-opacity group-hover:inline">
-                    Attach
-                  </span>
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="border-lumon-terminal-text/20 text-lumon-terminal-text/70 hover:border-lumon-terminal-text/40 hover:bg-lumon-terminal-text/10 flex items-center justify-between gap-1 rounded-lg border border-dashed px-2 py-1 text-sm transition-colors"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Project
-                </button>
-                <button
-                  type="button"
+          <form onSubmit={handleSubmit}>
+            <div className="border-lumon-terminal-text/20 bg-lumon-terminal-bg relative rounded-xl border">
+              <div className="overflow-y-auto">
+                <Textarea
+                  ref={textareaRef}
+                  value={value}
+                  onChange={(e) => {
+                    setValue(e.target.value);
+                    adjustHeight();
+                  }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask Kier a question..."
+                  disabled={isSubmitting}
                   className={cn(
-                    "flex items-center justify-between gap-1 rounded-lg border px-1.5 py-1.5 text-sm transition-colors",
-                    value.trim()
-                      ? "border-lumon-terminal-text bg-lumon-terminal-text text-lumon-terminal-bg"
-                      : "border-lumon-terminal-text/20 text-lumon-terminal-text/70 hover:border-lumon-terminal-text/40 hover:bg-lumon-terminal-text/10",
+                    "w-full px-4 py-3",
+                    "resize-none",
+                    "bg-transparent",
+                    "border-none",
+                    "text-lumon-terminal-text text-sm",
+                    "focus:outline-none",
+                    "focus-visible:ring-0 focus-visible:ring-offset-0",
+                    "placeholder:text-lumon-terminal-text/50 placeholder:text-sm",
+                    "min-h-[60px]",
+                    isSubmitting && "opacity-50",
                   )}
-                >
-                  <ArrowUpIcon className="h-4 w-4" />
-                  <span className="sr-only">Send</span>
-                </button>
+                  style={{
+                    overflow: "hidden",
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="group hover:bg-lumon-terminal-text/10 flex items-center gap-1 rounded-lg p-2 transition-colors"
+                    disabled={isSubmitting}
+                  >
+                    <Paperclip className="text-lumon-terminal-text h-4 w-4" />
+                    <span className="text-lumon-terminal-text/70 hidden text-xs transition-opacity group-hover:inline">
+                      Attach
+                    </span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="border-lumon-terminal-text/20 text-lumon-terminal-text/70 hover:border-lumon-terminal-text/40 hover:bg-lumon-terminal-text/10 flex items-center justify-between gap-1 rounded-lg border border-dashed px-2 py-1 text-sm transition-colors"
+                    disabled={isSubmitting}
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    Project
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!value.trim() || isSubmitting}
+                    className={cn(
+                      "flex items-center justify-between gap-1 rounded-lg border px-1.5 py-1.5 text-sm transition-colors",
+                      value.trim() && !isSubmitting
+                        ? "border-lumon-terminal-text bg-lumon-terminal-text text-lumon-terminal-bg"
+                        : "border-lumon-terminal-text/20 text-lumon-terminal-text/70 hover:border-lumon-terminal-text/40 hover:bg-lumon-terminal-text/10",
+                    )}
+                  >
+                    <ArrowUpIcon className="h-4 w-4" />
+                    <span className="sr-only">Send</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          </form>
 
           <div className="mt-4 flex items-center justify-center gap-3">
             <ActionButton
-              icon={<ImageIcon className="h-4 w-4" />}
-              label="Clone a Screenshot"
+              icon={<Wallet className="h-4 w-4" />}
+              label="Get Wallet Details"
             />
             <ActionButton
-              icon={<Figma className="h-4 w-4" />}
-              label="Import from Figma"
+              icon={<ArrowLeftRight className="h-4 w-4" />}
+              label="Transfer"
             />
             <ActionButton
-              icon={<FileUp className="h-4 w-4" />}
-              label="Upload a Project"
+              icon={<CircleDollarSign className="h-4 w-4" />}
+              label="Get Balance"
             />
             <ActionButton
-              icon={<MonitorIcon className="h-4 w-4" />}
-              label="Landing Page"
-            />
-            <ActionButton
-              icon={<CircleUserRound className="h-4 w-4" />}
-              label="Sign Up Form"
+              icon={<MessageCircleQuestion className="h-4 w-4" />}
+              label="Custom Action"
             />
           </div>
         </div>

@@ -37,6 +37,6 @@
     "**/*.cjs",
     "**/*.js",
     ".next/types/**/*.ts"
-  ],
+, "../../llm-txt/cdp-wallet-manager-db-prisma.ts", "../../llm-txt/vercel-ai-sdk-cdp-chatbot.ts"  ],
   "exclude": ["node_modules"]
 }
