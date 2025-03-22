@@ -5,14 +5,53 @@ import { chats, chatMessages } from "@/server/db/schemas/chats_schemas";
 import { eq } from "drizzle-orm";
 import { env } from "@/env";
 
+import { getVercelAITools } from "@coinbase/agentkit-vercel-ai-sdk";
+import { privyWalletProvider } from "@/app/lumon/kier/_utils/privyProvider";
+import {
+  AgentKit,
+  cdpApiActionProvider,
+  erc721ActionProvider,
+  pythActionProvider,
+  walletActionProvider,
+  CdpWalletProvider,
+} from "@coinbase/agentkit";
+
 export async function POST(req: Request) {
   const { messages, id } = await req.json();
   console.log("API route hit:", { messages, id });
 
-  const result = streamText({
+  const agentKit = await AgentKit.from({
+    // cdpApiKeyName: env.CDP_API_KEY_NAME,
+    // cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY,
+    walletProvider: privyWalletProvider,
+    actionProviders: [
+      cdpApiActionProvider({
+        apiKeyName: process.env.CDP_API_KEY_NAME,
+        apiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY,
+      }),
+      erc721ActionProvider(),
+      pythActionProvider(),
+      walletActionProvider(),
+    ],
+  });
+  console.log("agentKit", agentKit);
+
+  const tools = await getVercelAITools(agentKit);
+  console.log("tools", tools);
+
+  const stream = streamText({
+    // tools,
+    // maxSteps: 10,
     model: openai("gpt-4o-mini"),
-    system:
-      "You are a helpful assistant that can answer questions and help with tasks.",
+    // system: `You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are
+    //   empowered to interact onchain using your tools. If you ever need funds, you can request them from the
+    //   faucet if you are on network ID 'base-sepolia'. If not, you can provide your wallet details and request
+    //   funds from the user. Before executing your first action, get the wallet details to see what network
+    //   you're on. If there is a 5XX (internal) HTTP error code, ask the user to try again later. If someone
+    //   asks you to do something you can't do with your currently available tools, you must say so, and
+    //   encourage them to implement it themselves using the CDP SDK + Agentkit, recommend they go to
+    //   docs.cdp.coinbase.com for more information. Be concise and helpful with your responses. Refrain from
+    //   restating your tools' descriptions unless it is explicitly requested.`,
     messages,
     experimental_generateMessageId: createIdGenerator({
       prefix: "msg",
@@ -34,10 +73,10 @@ export async function POST(req: Request) {
       }
     },
   });
-  console.log("result", result);
+  console.log("stream", stream);
 
   // Consume the stream to ensure it runs to completion even if client disconnects
-  result.consumeStream();
+  stream.consumeStream();
 
-  return result.toDataStreamResponse();
+  return stream.toDataStreamResponse();
 }

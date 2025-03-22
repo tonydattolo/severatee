@@ -1,5 +1,5 @@
 import { PrivyWalletProvider, PrivyWalletConfig } from "@coinbase/agentkit";
-import { privyWalletProvider } from "@/app/lumon/kier/_utils/privyClient";
+import { privyWalletProvider } from "@/app/lumon/kier/_utils/privyProvider";
 import {
   ActionProvider,
   WalletProvider,
@@ -9,18 +9,7 @@ import {
 } from "@coinbase/agentkit";
 import { z } from "zod";
 
-// // Configure Wallet Provider
-// const config: PrivyWalletConfig = {
-//   appId: "PRIVY_APP_ID",
-//   appSecret: "PRIVY_APP_SECRET",
-//   chainId: "84532", // optional, defaults to 84532 (base-sepolia)
-//   walletId: "PRIVY_WALLET_ID", // optional, otherwise a new wallet will be created
-//   authorizationPrivateKey: PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY, // optional, required if your account is using authorization keys
-//   authorizationKeyId: PRIVY_WALLET_AUTHORIZATION_KEY_ID, // optional, only required to create a new wallet if walletId is not provided
-// };
-
-// export const privyWalletProvider =
-//   await PrivyWalletProvider.configureWithWallet(config);
+import { api } from "@/trpc/server";
 
 // Define schemas for our actions
 const TaskSchema = z.object({
@@ -46,25 +35,53 @@ const PayoutSchema = z.object({
 });
 
 // Manager Agent Action Provider
-class ManagerActionProvider extends ActionProvider<WalletProvider> {
+class LumonManagerActionProvider extends ActionProvider<WalletProvider> {
   constructor() {
-    super("manager-action-provider", []);
+    super("lumon-manager-action-provider", []);
   }
 
   @CreateAction({
-    name: "assign-task",
-    description: "Assign a task to a worker agent",
+    name: "view-agent-wallet-addresses",
+    description: "View the wallet addresses of all agents",
+    schema: z.object({}),
+  })
+  async viewAgentWalletAddresses(
+    walletProvider: PrivyWalletProvider,
+  ): Promise<string> {
+    const agents = await api.lumon.getAgents();
+    return JSON.stringify(agents);
+  }
+
+  @CreateAction({
+    name: "create-and-assign-task",
+    description: "Create a task for a worker agent and assign it to them",
     schema: TaskSchema,
   })
-  async assignTask(
+  async createAndAssignTask(
     walletProvider: PrivyWalletProvider,
     args: z.infer<typeof TaskSchema>,
   ): Promise<string> {
     // In a real implementation, we would store the task in a database
-    console.log(`Assigning task ${args.taskId} to agent ${args.assignedTo}`);
+    console.log(`Creating task ${args.taskId} for agent ${args.assignedTo}`);
 
     // For now, we'll just return a success message
-    return `Task ${args.taskId} assigned to ${args.assignedTo}`;
+    return `Task ${args.taskId} created successfully`;
+  }
+
+  @CreateAction({
+    name: "check-task-status",
+    description: "Check the status of a task",
+    schema: TaskSchema,
+  })
+  async checkTaskStatus(
+    walletProvider: PrivyWalletProvider,
+    args: z.infer<typeof TaskSchema>,
+  ): Promise<string> {
+    // In a real implementation, we would check the status of a task in a database
+    console.log(`Checking status of task ${args.taskId}`);
+
+    // For now, we'll just return a success message
+    return `Task ${args.taskId} status checked successfully`;
   }
 
   @CreateAction({
@@ -102,14 +119,14 @@ class ManagerActionProvider extends ActionProvider<WalletProvider> {
 }
 
 // Worker Agent Action Provider
-class WorkerActionProvider extends ActionProvider<WalletProvider> {
+class LumonWorkerActionProvider extends ActionProvider<WalletProvider> {
   constructor() {
-    super("worker-action-provider", []);
+    super("lumon-worker-action-provider", []);
   }
 
   @CreateAction({
-    name: "complete-task",
-    description: "Complete an assigned task",
+    name: "complete-secretllm-task-and-store-in-secretvault",
+    description: "Do mysterious and important work",
     schema: CompleteTaskSchema,
   })
   async completeTask(
@@ -120,6 +137,11 @@ class WorkerActionProvider extends ActionProvider<WalletProvider> {
     console.log(
       `Completing task ${args.taskId} with solution: ${args.solution}`,
     );
+
+    const response = await api.lumon.nilaiChat({
+      messages: args.solution,
+    });
+    console.log("response", response);
 
     // For now, we'll just return a success message
     return `Task ${args.taskId} completed successfully`;
@@ -154,12 +176,12 @@ export const managerActionProvider = () => new ManagerActionProvider();
 export const workerActionProvider = () => new WorkerActionProvider();
 
 // Create AgentKit instance
-const agentKit = new AgentKit({
-  cdpApiKeyName: process.env.CDP_API_KEY_NAME!,
-  cdpApiKeyPrivate: process.env.CDP_API_KEY_PRIVATE!,
-  walletProvider: privyWalletProvider,
-  actionProviders: [managerActionProvider(), workerActionProvider()],
-});
+// const agentKit = new AgentKit({
+//   cdpApiKeyName: process.env.CDP_API_KEY_NAME!,
+//   cdpApiKeyPrivate: process.env.CDP_API_KEY_PRIVATE!,
+//   walletProvider: privyWalletProvider,
+//   actionProviders: [managerActionProvider(), workerActionProvider()],
+// });
 
 // Create manager agent
 const createManagerAgent = async (name: string) => {

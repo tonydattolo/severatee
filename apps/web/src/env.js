@@ -20,6 +20,8 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string(),
     PRIVY_WALLET_AUTHORIZATION_KEY_ID: z.string(),
     PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY: z.string(),
+    PRIVY_LUMON_MANAGER_WALLET_ADDRESS: z.string(),
+    PRIVY_LUMON_MANAGER_WALLET_ID: z.string(),
   },
 
   /**
@@ -57,6 +59,9 @@ export const env = createEnv({
       process.env.PRIVY_WALLET_AUTHORIZATION_KEY_ID,
     PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY:
       process.env.PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY,
+    PRIVY_LUMON_MANAGER_WALLET_ADDRESS:
+      process.env.PRIVY_LUMON_MANAGER_WALLET_ADDRESS,
+    PRIVY_LUMON_MANAGER_WALLET_ID: process.env.PRIVY_LUMON_MANAGER_WALLET_ID,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

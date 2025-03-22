@@ -20,8 +20,10 @@ import {
   Scroll,
   Mail,
   MessageSquareText,
+  Droplet,
 } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { Progress } from "@/components/ui/progress";
 
 import { NavUser } from "./nav-user";
 import { WorkspaceSwitcher } from "./workspace-switcher";
@@ -65,19 +67,14 @@ const navigation = [
     url: "/lumon/kier",
   },
   {
-    title: "MDR Assigner",
-    icon: Mail,
-    url: "/lumon/mdr-assigner",
+    title: "Macrodata Refinement",
+    icon: Droplet,
+    items: [
+      { title: "Tasks", url: "/lumon/mdr/tasks" },
+      { title: "Refiner-Agents", url: "/lumon/mdr/agents" },
+      { title: "Submit", url: "/lumon/mdr/tasks/submit" },
+    ],
   },
-  // {
-  //   title: "sub items example",
-  //   icon: Layout,
-  //   items: [
-  //     { title: "1", url: "/" },
-  //     { title: "2", url: "/" },
-  //     { title: "3", url: "/" },
-  //   ],
-  // },
 ];
 
 interface NavItem {
@@ -86,6 +83,21 @@ interface NavItem {
   url?: string;
   items?: { title: string; url: string }[];
 }
+
+interface RefinementRoom {
+  name: string;
+  progress: number;
+  isComplete: boolean;
+}
+
+const refinementRooms: RefinementRoom[] = [
+  { name: "Cold Harbor", progress: 96, isComplete: false },
+  { name: "Cairns", progress: 100, isComplete: true },
+  { name: "Wellington", progress: 100, isComplete: true },
+  { name: "Billings", progress: 100, isComplete: true },
+  { name: "Zurich", progress: 100, isComplete: true },
+  { name: "Lucknow", progress: 100, isComplete: true },
+];
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: User | undefined;
@@ -115,7 +127,12 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
     } else {
       // Render a collapsible menu for items with subitems
       return (
-        <Collapsible key={item.title} asChild className="group/collapsible">
+        <Collapsible
+          key={item.title}
+          asChild
+          className="group/collapsible"
+          defaultOpen
+        >
           <SidebarMenuItem>
             <CollapsibleTrigger asChild>
               <SidebarMenuButton tooltip={item.title}>
@@ -157,11 +174,27 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Favorited Projects</SidebarGroupLabel>
-          <SidebarGroupAction title="Add Case">
-            <Plus /> <span className="sr-only">Add Project</span>
-          </SidebarGroupAction>
-          <SidebarGroupContent />
+          <SidebarGroupLabel>Refinement Rooms</SidebarGroupLabel>
+          <SidebarGroupContent>
+            {refinementRooms.map((room) => (
+              <div key={room.name} className="px-3 py-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span
+                    className={room.isComplete ? "text-muted-foreground" : ""}
+                  >
+                    {room.name}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {room.progress}%
+                  </span>
+                </div>
+                <Progress
+                  value={room.progress}
+                  className={`mt-1 h-1 ${room.isComplete ? "bg-muted" : ""}`}
+                />
+              </div>
+            ))}
+          </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 

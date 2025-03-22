@@ -76,7 +76,7 @@ export default function ChatUI({ id, initialMessages, chat }: ChatUIProps) {
   useEffect(() => {
     if (initialMessages?.length === 1) {
       setMessages(initialMessages);
-      // reload();
+      reload();
     }
   }, []);
 

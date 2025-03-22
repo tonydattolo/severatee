@@ -3,7 +3,7 @@ import { profileRouter } from "@/server/api/routers/profile_router";
 import { workspaceRouter } from "@/server/api/routers/workspace_router";
 import { chatsRouter } from "./routers/chats_router";
 import { walletsRouter } from "./routers/wallets_router";
-
+import { lumonRouter } from "./routers/lumon_router";
 /**
  * This is the primary router for your server.
  *
@@ -14,6 +14,7 @@ export const appRouter = createTRPCRouter({
   workspace: workspaceRouter,
   chats: chatsRouter,
   wallets: walletsRouter,
+  lumon: lumonRouter,
 });
 
 // export type definition of API
