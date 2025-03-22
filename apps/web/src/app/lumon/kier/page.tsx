@@ -82,7 +82,7 @@ export default function Kier() {
 
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 60,
-    maxHeight: 200,
+    maxHeight: 400,
   });
 
   const handleSubmit = async (e?: FormEvent) => {
@@ -95,12 +95,9 @@ export default function Kier() {
       // Create a new chat with the title "Praise Kier"
       const newChat = await createChatMutation.mutateAsync({
         title: "Praise Kier",
+        firstMessage: value,
       });
 
-      // Store the first message to send after navigation
-      sessionStorage.setItem("pendingMessage", value);
-
-      // Navigate to the chat page
       router.push(`/lumon/kier/chat/${newChat?.id}`);
     } catch (error) {
       console.error("Failed to create chat:", error);

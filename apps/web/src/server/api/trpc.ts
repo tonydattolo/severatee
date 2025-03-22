@@ -150,11 +150,18 @@ export const authenticatedProcedure = t.procedure.use(
       //     ^?
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
+    if (!ctx.db) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Database connection not found",
+      });
+    }
     return opts.next({
       ctx: {
         // ✅ user value is known to be non-null now
         user: session.user,
         // ^?
+        db: ctx.db,
       },
     });
   },

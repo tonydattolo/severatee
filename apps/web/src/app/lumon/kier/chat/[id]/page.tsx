@@ -1,31 +1,40 @@
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
 import { api } from "@/trpc/server";
 import ChatUI from "@/app/lumon/kier/_components/chat-ui";
-import { Message, createIdGenerator } from "ai";
+import LoadingScreen from "@/components/common/loading-screen";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Message } from "ai";
 
 export default async function ChatPage({ params }: { params: { id: string } }) {
-  try {
-    const chat = await api.chats.getChatById({ id: params.id });
+  const { id } = await params;
 
-    // Convert DB messages to AI SDK Message format
-    const initialMessages: Message[] = chat.messages.map((msg) => ({
-      id: msg.id || createIdGenerator({ prefix: "msg_", size: 16 })(),
-      role: msg.role as "user" | "assistant" | "system",
-      content: msg.content,
-      createdAt: msg.createdAt,
-    }));
+  const chatWithMessages = await api.chats.getChatById({ id });
 
+  if (!chatWithMessages) {
     return (
-      <Suspense fallback={<div>Loading chat...</div>}>
-        <ChatUI
-          id={chat.id}
-          initialMessages={initialMessages}
-          chatTitle={chat.title || "New Chat"}
-        />
-      </Suspense>
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Alert variant="destructive">
+          <AlertTitle>Error fetching chat</AlertTitle>
+          <AlertDescription>Error fetching chat</AlertDescription>
+        </Alert>
+      </div>
     );
-  } catch (error) {
-    return notFound();
   }
+
+  const messages: Message[] = chatWithMessages.messages.map((message) => ({
+    id: message.id,
+    content: message.content ?? "",
+    role: (message.role || "user") as "user" | "assistant" | "system" | "data",
+  }));
+  console.log("messages in page", messages);
+
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <ChatUI
+        id={chatWithMessages.id}
+        initialMessages={messages}
+        chat={chatWithMessages}
+      />
+    </Suspense>
+  );
 }

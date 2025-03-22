@@ -10,117 +10,95 @@ import {
   Paperclip,
   PlusIcon,
   CircleUserRound,
+  AlertCircle,
 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useAutoResizeTextarea } from "@/hooks/use-auto-resize-textarea";
 import { createIdGenerator } from "ai";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ChatWithMessages } from "@/server/db/schemas/chats_schemas";
 
 interface ChatUIProps {
-  id: string;
+  id?: string | undefined;
   initialMessages?: Message[];
-  chatTitle?: string;
+  chat?: ChatWithMessages;
 }
 
-export default function ChatUI({
-  id,
-  initialMessages = [],
-  chatTitle = "New Chat",
-}: ChatUIProps) {
+export default function ChatUI({ id, initialMessages, chat }: ChatUIProps) {
   const router = useRouter();
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 60,
-    maxHeight: 200,
-  });
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const utils = api.useUtils();
-  const chatStatus = api.chats.getChatById.useQuery({ id }, { enabled: false });
 
-  // Check for pending message from Kier page
-  useEffect(() => {
-    const pendingMessage = sessionStorage.getItem("pendingMessage");
-    if (pendingMessage) {
-      // Clear the pending message
-      sessionStorage.removeItem("pendingMessage");
-
-      // Send the message
-      append({
-        id: `msg_user_${Date.now()}`,
-        content: pendingMessage,
-        role: "user",
-        createdAt: new Date(),
-      });
-    }
-  }, []);
+  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
+    minHeight: 60,
+    // maxHeight: 200,
+  });
 
   const {
     messages,
     input,
     handleInputChange,
     handleSubmit,
-    isLoading,
+    status,
     error,
     append,
+    setMessages,
+    reload,
   } = useChat({
     id,
     initialMessages,
-    api: "/api/chat",
     sendExtraMessageFields: true,
+    api: "/api/chat",
+    streamProtocol: "text",
     generateId: createIdGenerator({
-      prefix: "msg_",
+      prefix: "msg",
+      separator: "_",
       size: 16,
     }),
-    onResponse: () => {
-      // Refresh the chat list when we get a response
-      utils.chats.getUserChats.invalidate();
-    },
-    onFinish: () => {
-      // Refresh the chat when finished
-      utils.chats.getChatById.invalidate({ id });
+    onResponse: (response) => {
+      // Clear any previous errors when we get a successful response
+      setErrorMessage(null);
+      console.log("Got response:", response);
     },
     onError: (error) => {
+      // Set a user-friendly error message
+      setErrorMessage("Failed to get a response. Please try again.");
       console.error("Chat error:", error);
-      if (error.message.includes("disconnect") && !isReconnecting) {
-        handleReconnect();
-      }
+    },
+    onFinish: () => {
+      console.log("Chat finished");
+      // utils.chats.getChatById.invalidate({ id });
     },
   });
 
-  // Handle client reconnection after disconnect
-  const handleReconnect = async () => {
-    setIsReconnecting(true);
-    try {
-      // Fetch the latest chat state
-      await utils.chats.getChatById.invalidate({ id });
-      const latestChat = await chatStatus.refetch();
-
-      if (latestChat.data) {
-        // Check if the chat is still streaming
-        if (latestChat.data.status === "streaming") {
-          // Wait for streaming to complete
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          await utils.chats.updateChatStatus.mutate({
-            id,
-            status: "complete",
-          });
-        }
-
-        // Refresh the page to get the latest messages
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Failed to reconnect:", error);
-    } finally {
-      setIsReconnecting(false);
+  useEffect(() => {
+    if (initialMessages?.length === 1) {
+      setMessages(initialMessages);
+      // reload();
     }
-  };
+  }, []);
+
+  // useEffect(() => {
+  //   console.log("messages", messages);
+  // }, [messages]);
+
+  // Check if the chat is currently loading (status is submitted or streaming)
+  const isLoading = status === "submitted" || status === "streaming";
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (input.trim()) {
-        handleSubmit(e);
-        adjustHeight(true);
+        console.log("Submitting message:", input);
+        try {
+          handleSubmit(e);
+          adjustHeight(true);
+        } catch (error) {
+          console.error("Error submitting message:", error);
+          setErrorMessage("Failed to send your message. Please try again.");
+        }
       }
     }
   };
@@ -128,16 +106,32 @@ export default function ChatUI({
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center p-4">
       <div className="mx-auto flex w-full max-w-4xl flex-col items-center space-y-8">
-        <h1 className="text-lumon-terminal-text text-4xl font-bold">
-          {chatTitle}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lumon-terminal-text text-4xl font-bold">
+            {chat?.title ?? "New Chat"}
+          </h1>
+          <div
+            className={cn("rounded-full px-2 py-1 text-xs", statusPill(status))}
+          >
+            {status}
+          </div>
+        </div>
 
         <div className="w-full">
+          {/* Error message display */}
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Messages display area */}
           <div className="border-lumon-terminal-text/20 bg-lumon-terminal-bg mb-4 max-h-[60vh] overflow-y-auto rounded-xl border p-4">
             {messages.length === 0 ? (
               <div className="text-lumon-terminal-text/50 flex h-32 items-center justify-center">
-                Start a new conversation
+                {chat?.title ?? "New Chat"}
               </div>
             ) : (
               messages.map((message) => (
@@ -189,24 +183,22 @@ export default function ChatUI({
                 </div>
               </div>
             )}
-            {error && (
-              <div className="mb-4 rounded-lg bg-red-500/10 p-3 text-red-500">
-                <p className="text-sm">Error: {error.message}</p>
-                {error.message.includes("disconnect") && (
-                  <button
-                    onClick={handleReconnect}
-                    className="mt-2 rounded bg-red-500 px-2 py-1 text-xs text-white"
-                    disabled={isReconnecting}
-                  >
-                    {isReconnecting ? "Reconnecting..." : "Reconnect"}
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Input area */}
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              try {
+                handleSubmit(e);
+                adjustHeight(true);
+              } catch (error) {
+                console.error("Error submitting form:", error);
+                setErrorMessage(
+                  "Failed to send your message. Please try again.",
+                );
+              }
+            }}
+          >
             <div className="border-lumon-terminal-text/20 bg-lumon-terminal-bg relative rounded-xl border">
               <div className="overflow-y-auto">
                 <Textarea
@@ -281,4 +273,20 @@ export default function ChatUI({
       </div>
     </div>
   );
+}
+
+// Helper function to get the appropriate CSS class for a status pill
+function statusPill(status: string) {
+  switch (status) {
+    case "submitted":
+      return "bg-blue-500";
+    case "streaming":
+      return "bg-green-500";
+    case "ready":
+      return "bg-green-500";
+    case "error":
+      return "bg-red-500";
+    default:
+      return "bg-gray-500";
+  }
 }

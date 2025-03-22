@@ -18,6 +18,8 @@ export const env = createEnv({
     CDP_API_KEY_NAME: z.string(),
     CDP_API_KEY_PRIVATE_KEY: z.string(),
     OPENAI_API_KEY: z.string(),
+    PRIVY_WALLET_AUTHORIZATION_KEY_ID: z.string(),
+    PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY: z.string(),
   },
 
   /**
@@ -51,6 +53,10 @@ export const env = createEnv({
     CDP_API_KEY_NAME: process.env.CDP_API_KEY_NAME,
     CDP_API_KEY_PRIVATE_KEY: process.env.CDP_API_KEY_PRIVATE_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    PRIVY_WALLET_AUTHORIZATION_KEY_ID:
+      process.env.PRIVY_WALLET_AUTHORIZATION_KEY_ID,
+    PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY:
+      process.env.PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

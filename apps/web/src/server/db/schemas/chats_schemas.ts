@@ -2,17 +2,20 @@ import { relations } from "drizzle-orm";
 import { pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { profiles } from "./profiles_schema";
 
 export const chats = pgTable("chats", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: varchar("id", { length: 64 }).primaryKey(),
   title: varchar("title", { length: 255 }).default("New Chat"),
-  userId: varchar("user_id", { length: 255 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  externalId: varchar("external_id", { length: 255 }),
+  userId: uuid("user_id").references(() => profiles.id, {
+    onDelete: "cascade",
+  }),
+  createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at")
-    .notNull()
     .defaultNow()
     .$onUpdateFn(() => new Date()),
-  status: varchar("status", { length: 20 }).default("complete").notNull(), // 'complete' or 'streaming'
+  status: varchar("status", { length: 20 }).default("complete"), // 'complete' or 'streaming'
 });
 
 export const chatRelations = relations(chats, ({ many }) => ({
@@ -20,13 +23,16 @@ export const chatRelations = relations(chats, ({ many }) => ({
 }));
 
 export const chatMessages = pgTable("chat_messages", {
-  id: varchar("id", { length: 255 }).primaryKey(),
-  chatId: uuid("chat_id")
+  id: varchar("id", { length: 64 }).primaryKey(),
+  chatId: varchar("chat_id", { length: 64 })
     .notNull()
     .references(() => chats.id, { onDelete: "cascade" }),
-  role: varchar("role", { length: 20 }).notNull(), // 'user', 'assistant', 'system'
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  role: varchar("role", { length: 20 }).default("user"), // 'user', 'assistant', 'system'
+  content: text("content"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdateFn(() => new Date()),
 });
 
 export const messageRelations = relations(chatMessages, ({ one }) => ({

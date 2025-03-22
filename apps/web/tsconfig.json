@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+
+    // https://docs.cdp.coinbase.com/agentkit/docs/agent-actions#adding-actions-to-an-action-provider
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
     /* Base Options: */
     "esModuleInterop": true,
     "skipLibCheck": true,

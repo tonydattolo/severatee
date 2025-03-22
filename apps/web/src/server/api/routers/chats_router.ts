@@ -1,53 +1,65 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createTRPCRouter, authenticatedProcedure } from "../trpc";
-import { chats, chatMessages } from "../../db/schemas/chats_schemas";
+import { createTRPCRouter, authenticatedProcedure } from "@/server/api/trpc";
+import { chats, chatMessages } from "@/server/db/schemas/chats_schemas";
 import { eq, desc } from "drizzle-orm";
-import { generateId } from "ai";
+import { createIdGenerator, generateId } from "ai";
 
+const generateChatId = createIdGenerator({
+  prefix: "chat",
+  separator: "_",
+  size: 16,
+});
+const generateMessageId = createIdGenerator({
+  prefix: "msg",
+  separator: "_",
+  size: 16,
+});
 export const chatsRouter = createTRPCRouter({
   // Create a new chat
   createChat: authenticatedProcedure
     .input(
-      z
-        .object({
-          title: z.string().optional(),
-        })
-        .optional(),
+      z.object({
+        title: z.string().default("New Chat"),
+        firstMessage: z.string(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user.id;
+      const [newChat] = await ctx.db.transaction(async (tx) => {
+        const [chat] = await tx
+          .insert(chats)
+          .values({
+            id: generateChatId(),
+            userId: ctx.user.id,
+            title: input.title,
+          })
+          .returning();
 
-      if (!ctx.db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database connection not found",
+        if (!chat) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create chat",
+          });
+        }
+
+        await tx.insert(chatMessages).values({
+          id: generateMessageId(),
+          chatId: chat.id,
+          role: "user",
+          content: input.firstMessage,
         });
-      }
 
-      const [newChat] = await ctx.db
-        .insert(chats)
-        .values({
-          userId,
-          title: input?.title || "New Chat",
-        })
-        .returning();
+        return [chat];
+      });
 
       return newChat;
     }),
 
   // Get a chat by ID with its messages
   getChatById: authenticatedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const userId = ctx.user.id;
-
-      if (!ctx.db) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Database connection not found",
-        });
-      }
 
       const chat = await ctx.db.query.chats.findFirst({
         where: eq(chats.id, input.id),
