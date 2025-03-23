@@ -24,7 +24,10 @@ import {
 
 import { PrivyWalletProvider, PrivyWalletConfig } from "@coinbase/agentkit";
 import { privyWalletProvider } from "@/app/utils/privy/privyProvider";
-
+import {
+  lumonWorkerActionProvider,
+  lumonManagerActionProvider,
+} from "@/app/lumon/kier/_tools/lumon-actions";
 export async function POST(req: Request) {
   const { messages, id } = await req.json();
   console.log("API route hit:", { messages, id });
@@ -41,14 +44,17 @@ export async function POST(req: Request) {
       erc721ActionProvider(),
       pythActionProvider(),
       walletActionProvider(),
+      // Custom Coinbase AgenitKit Lumon Action Providers
+      lumonWorkerActionProvider(),
+      lumonManagerActionProvider(),
     ],
   });
 
   const tools = await getVercelAITools(agentKit);
 
   const stream = streamText({
-    tools,
-    maxSteps: 10,
+    // tools,
+    // maxSteps: 10,
     model: openai("gpt-4o-mini"),
     system: `You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are
       empowered to interact onchain using your tools. If you ever need funds, you can request them from the

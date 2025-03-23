@@ -19,7 +19,6 @@ import {
   lumonAgents,
   insertLumonTaskSchema,
   insertLumonAgentSchema,
-  lumonNillionSchemas,
 } from "@/server/db/schemas/lumon_schemas";
 import { v4 as uuidv4 } from "uuid";
 import { NextResponse } from "next/server";
@@ -41,18 +40,6 @@ export const lumonRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Get the latest schema ID from our database
-        const latestSchema = await ctx.db.query.lumonNillionSchemas.findFirst({
-          orderBy: [desc(lumonNillionSchemas.createdAt)],
-        });
-
-        if (!latestSchema) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "No Nillion schema found. Please create one first.",
-          });
-        }
-
         const task = await ctx.db.query.lumonTasks.findFirst({
           where: eq(lumonTasks.id, input.taskId),
           with: {
@@ -60,10 +47,10 @@ export const lumonRouter = createTRPCRouter({
           },
         });
 
-        if (!task || !task.agent) {
+        if (!task) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Task or agent not found",
+            message: "Task not found",
           });
         }
 
@@ -116,43 +103,42 @@ export const lumonRouter = createTRPCRouter({
           orgConfig.nodes,
           orgConfig.orgCredentials,
         );
-        await org.init();
+        // await org.init();
 
-        // Create a record in Nillion
-        const recordId = uuidv4();
-        const record = {
-          _id: recordId,
-          taskId: task.id,
-          agentId: task.agentId,
-          agentWalletAddress: task.agent.walletAddress,
-          submittedAt: new Date().toISOString(),
-          data: {
-            "%share": JSON.stringify({ message: input.message }),
-          },
-          metadata: {
-            taskName: task.name,
-            agentName: task.agent.name,
-          },
-        };
+        // // Create a record in Nillion
+        // const recordId = uuidv4();
+        // const record = {
+        //   _id: recordId,
+        //   taskId: task.id,
+        //   agentId: task.agentId, // Changed from profileId to agentId
+        //   agentWalletAddress: task.agent.walletAddress, // Added agent wallet address
+        //   submittedAt: new Date().toISOString(),
+        //   data: {
+        //     "%share": JSON.stringify(input.data),
+        //   },
+        //   metadata: {
+        //     taskName: task.name,
+        //     agentName: task.agent.name, // Changed from profile.name to agent.name
+        //     ...input.metadata,
+        //   },
+        // };
 
-        // Store the record using the latest schema
-        await org.storeRecord(latestSchema.schemaId, record);
+        // // Store the record in Nillion
+        // await org.storeRecord(taskSchema.name, record);
 
-        // Update the task status and record ID
-        await ctx.db
-          .update(lumonTasks)
-          .set({
-            signature,
-            answer,
-            status: "completed",
-            progress: 100,
-            completedAt: new Date(),
-            nillionRecordId: recordId,
-            updatedAt: new Date(),
-          })
-          .where(eq(lumonTasks.id, input.taskId));
+        // // Update the task status and record ID
+        // await ctx.db
+        //   .update(lumonTasks)
+        //   .set({
+        //     status: "completed",
+        //     completedAt: new Date(),
+        //     nillionRecordId: recordId,
+        //     updatedAt: new Date(),
+        //     progress: 100,
+        //   })
+        //   .where(eq(lumonTasks.id, input.taskId));
 
-        return { signature, answer, recordId, success: true };
+        return { signature, answer, success: true };
       } catch (error) {
         console.error("Chat error:", error);
         return { error: "Failed to process chat request" };
@@ -167,30 +153,11 @@ export const lumonRouter = createTRPCRouter({
       );
       await org.init();
 
-      // Create schema in Nillion
+      // create a new collectionschema
       const newSchema = await org.createSchema(taskSchema, "Lumon Task Schema");
       console.log("Lumon Task Schema created:", newSchema);
 
-      // Extract schema ID from the first node response
-      const schemaId = newSchema[0]?.schemaId;
-
-      if (!schemaId) {
-        throw new Error("Failed to get schema ID from Nillion response");
-      }
-
-      // Store schema details in our database
-      const [storedSchema] = await ctx.db
-        .insert(lumonNillionSchemas)
-        .values({
-          name: "Lumon Task Schema",
-          schemaId: schemaId,
-        })
-        .returning();
-
-      return {
-        nillionResponse: newSchema,
-        storedSchema,
-      };
+      return newSchema;
     } catch (error) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
@@ -793,7 +760,7 @@ export const lumonRouter = createTRPCRouter({
         };
 
         // Store the record in Nillion
-        await org.storeRecord(taskSchema.name, record);
+        await org.storeRecord(schema.name, record);
 
         // Update the task
         await ctx.db

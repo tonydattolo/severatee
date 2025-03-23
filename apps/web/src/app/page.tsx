@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { api, HydrateClient } from "@/trpc/server";
-import { ArrowRight, Database, Lock, Shield, Wallet, Zap } from "lucide-react";
+import { ArrowRight, Bot, Brain, Lock, Shield, Wallet } from "lucide-react";
 import { ProcessTabs } from "@/components/process-tabs";
 
 export default async function Home() {
@@ -48,67 +48,55 @@ export default async function Home() {
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-lumon-blue mb-8 text-center text-3xl font-light">
-            How Cold Harbor Vault Works
+            How SeveraTEE Works
           </h2>
           <div className="mx-auto max-w-4xl">
             <p className="mb-6 text-lg text-slate-700">
-              Cold Harbor Vault is inspired by the Severance universe, where
-              "innies" perform secure data refinement tasks inside Trusted
-              Execution Environments (TEEs), while "outties" (managers) receive
-              only aggregated insights without visibility into the inner
-              computations.
+              Inspired by the Severance TV series, SeveraTEE combines AI agents
+              and Trusted Execution Environments (TEEs) to perform secure,
+              private computations. Our 'Innie' AI agents work within Nillion
+              SecretLLM to conduct mysterious and important tasks, while 'Kier'
+              manages and oversees the entire process.
             </p>
 
-            <div className="mb-8 grid gap-6 md:grid-cols-2">
+            <div className="mb-8 grid gap-6 md:grid-cols-3">
               <Card className="border-lumon-light-blue bg-lumon-light-blue/20 border p-6">
-                <h3 className="text-lumon-blue mb-3 text-xl font-medium">
-                  For Innies
+                <div className="mb-4 flex justify-center">
+                  <Bot className="text-lumon-blue h-8 w-8" />
+                </div>
+                <h3 className="text-lumon-blue mb-3 text-center text-xl font-medium">
+                  Powered by Nillion
                 </h3>
-                <ul className="space-y-2 text-slate-700">
-                  <li className="flex items-start">
-                    <div className="bg-lumon-blue mt-1 mr-2 h-4 w-4 rounded-full"></div>
-                    <span>Assigned a unique, privacy-preserving wallet</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="bg-lumon-blue mt-1 mr-2 h-4 w-4 rounded-full"></div>
-                    <span>
-                      Perform data refinement tasks in a secure environment
-                    </span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="bg-lumon-blue mt-1 mr-2 h-4 w-4 rounded-full"></div>
-                    <span>Receive automated payments based on performance</span>
-                  </li>
-                </ul>
+                <p className="text-center text-slate-700">
+                  Secure task execution in TEEs using SecretLLM and storage in
+                  SecretVault
+                </p>
               </Card>
 
               <Card className="border-lumon-light-blue bg-lumon-light-blue/20 border p-6">
-                <h3 className="text-lumon-blue mb-3 text-xl font-medium">
-                  For Outties
+                <div className="mb-4 flex justify-center">
+                  <Brain className="text-lumon-blue h-8 w-8" />
+                </div>
+                <h3 className="text-lumon-blue mb-3 text-center text-xl font-medium">
+                  Coinbase AgentKit
                 </h3>
-                <ul className="space-y-2 text-slate-700">
-                  <li className="flex items-start">
-                    <div className="bg-lumon-blue mt-1 mr-2 h-4 w-4 rounded-full"></div>
-                    <span>View only aggregated metrics and insights</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="bg-lumon-blue mt-1 mr-2 h-4 w-4 rounded-full"></div>
-                    <span>No visibility into granular inner computations</span>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="bg-lumon-blue mt-1 mr-2 h-4 w-4 rounded-full"></div>
-                    <span>Automated payment system with full audit trail</span>
-                  </li>
-                </ul>
+                <p className="text-center text-slate-700">
+                  Custom AI actions for task management and wallet operations
+                </p>
+              </Card>
+
+              <Card className="border-lumon-light-blue bg-lumon-light-blue/20 border p-6">
+                <div className="mb-4 flex justify-center">
+                  <Wallet className="text-lumon-blue h-8 w-8" />
+                </div>
+                <h3 className="text-lumon-blue mb-3 text-center text-xl font-medium">
+                  Privy Server Wallets
+                </h3>
+                <p className="text-center text-slate-700">
+                  Automated wallet management for both Kier and Innie agents
+                </p>
               </Card>
             </div>
-
-            <p className="text-lg text-slate-700">
-              The system leverages blockchain technology, zero-knowledge proofs,
-              and trusted execution environments to create a secure, private,
-              and efficient data refinement process that protects sensitive
-              information while ensuring computational integrity.
-            </p>
           </div>
         </div>
       </section>
@@ -117,7 +105,7 @@ export default async function Home() {
       <section className="bg-lumon-blue py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-lumon-light-blue mb-12 text-center text-3xl font-light">
-            The Cold Harbor Process
+            The SeveraTEE Process
           </h2>
 
           {/* Horizontal Stepper */}
@@ -126,62 +114,48 @@ export default async function Home() {
               {/* Connecting Line */}
               <div className="bg-lumon-light-blue/50 absolute top-1/2 left-0 h-1 w-full -translate-y-1/2"></div>
 
-              {/* Step Circles */}
+              {/* Step Circles - Condensed to 4 main steps */}
               <div className="relative flex justify-between">
-                {/* Step 1 */}
                 <div className="flex flex-col items-center">
                   <div className="bg-lumon-light-blue text-lumon-blue z-10 flex h-10 w-10 items-center justify-center rounded-full">
                     1
                   </div>
-                  <span className="text-lumon-light-blue mt-2 text-sm font-medium">
-                    Onboarding
+                  <span className="text-lumon-light-blue mt-2 text-center text-sm font-medium">
+                    Agent Setup
                   </span>
                 </div>
 
-                {/* Step 2 */}
                 <div className="flex flex-col items-center">
                   <div className="bg-lumon-light-blue text-lumon-blue z-10 flex h-10 w-10 items-center justify-center rounded-full">
                     2
                   </div>
-                  <span className="text-lumon-light-blue mt-2 text-sm font-medium">
+                  <span className="text-lumon-light-blue mt-2 text-center text-sm font-medium">
                     Task Assignment
                   </span>
                 </div>
 
-                {/* Step 3 */}
                 <div className="flex flex-col items-center">
                   <div className="bg-lumon-light-blue text-lumon-blue z-10 flex h-10 w-10 items-center justify-center rounded-full">
                     3
                   </div>
-                  <span className="text-lumon-light-blue mt-2 text-sm font-medium">
-                    Computation
+                  <span className="text-lumon-light-blue mt-2 text-center text-sm font-medium">
+                    Secure Execution
                   </span>
                 </div>
 
-                {/* Step 4 */}
                 <div className="flex flex-col items-center">
                   <div className="bg-lumon-light-blue text-lumon-blue z-10 flex h-10 w-10 items-center justify-center rounded-full">
                     4
                   </div>
-                  <span className="text-lumon-light-blue mt-2 text-sm font-medium">
-                    Verification
-                  </span>
-                </div>
-
-                {/* Step 5 */}
-                <div className="flex flex-col items-center">
-                  <div className="bg-lumon-light-blue text-lumon-blue z-10 flex h-10 w-10 items-center justify-center rounded-full">
-                    5
-                  </div>
-                  <span className="text-lumon-light-blue mt-2 text-sm font-medium">
-                    Payment
+                  <span className="text-lumon-light-blue mt-2 text-center text-sm font-medium">
+                    Completion & Payment
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Tabs for each step - Using the client component */}
+          {/* Tabs section remains the same structure */}
           <div className="border-lumon-blue bg-lumon-light-blue/30 mx-auto max-w-4xl rounded-lg border shadow-md">
             <ProcessTabs />
           </div>

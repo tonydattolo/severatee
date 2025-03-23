@@ -287,8 +287,9 @@ class LumonWorkerActionProvider extends ActionProvider<WalletProvider> {
   supportsNetwork = (network: Network) => true;
 }
 
-export const managerActionProvider = () => new LumonManagerActionProvider();
-export const workerActionProvider = () => new LumonWorkerActionProvider();
+export const lumonManagerActionProvider = () =>
+  new LumonManagerActionProvider();
+export const lumonWorkerActionProvider = () => new LumonWorkerActionProvider();
 
 // Export the action providers
 export { LumonManagerActionProvider, LumonWorkerActionProvider };
