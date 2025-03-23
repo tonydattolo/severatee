@@ -1,5 +1,11 @@
 import { openai } from "@ai-sdk/openai";
-import { appendResponseMessages, createIdGenerator, streamText } from "ai";
+import {
+  appendResponseMessages,
+  createIdGenerator,
+  generateId,
+  generateText,
+  streamText,
+} from "ai";
 import { db } from "@/server/db/db";
 import { chats, chatMessages } from "@/server/db/schemas/chats_schemas";
 import { eq } from "drizzle-orm";
@@ -20,24 +26,24 @@ export async function POST(req: Request) {
   const { messages, id } = await req.json();
   console.log("API route hit:", { messages, id });
 
-  const agentKit = await AgentKit.from({
-    // cdpApiKeyName: env.CDP_API_KEY_NAME,
-    // cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY,
-    walletProvider: privyWalletProvider,
-    actionProviders: [
-      cdpApiActionProvider({
-        apiKeyName: process.env.CDP_API_KEY_NAME,
-        apiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY,
-      }),
-      erc721ActionProvider(),
-      pythActionProvider(),
-      walletActionProvider(),
-    ],
-  });
-  console.log("agentKit", agentKit);
+  // const agentKit = await AgentKit.from({
+  //   // cdpApiKeyName: env.CDP_API_KEY_NAME,
+  //   // cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY,
+  //   walletProvider: privyWalletProvider,
+  //   actionProviders: [
+  //     cdpApiActionProvider({
+  //       apiKeyName: process.env.CDP_API_KEY_NAME,
+  //       apiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY,
+  //     }),
+  //     erc721ActionProvider(),
+  //     pythActionProvider(),
+  //     walletActionProvider(),
+  //   ],
+  // });
+  // console.log("agentKit", agentKit);
 
-  const tools = await getVercelAITools(agentKit);
-  console.log("tools", tools);
+  // const tools = await getVercelAITools(agentKit);
+  // console.log("tools", tools);
 
   const stream = streamText({
     // tools,
@@ -62,19 +68,22 @@ export async function POST(req: Request) {
       console.log("Stream finished:", response);
       const lastMessage = response.messages[response.messages.length - 1];
       if (lastMessage) {
+        // Handle the content array structure
+        const content =
+          lastMessage.content[0]?.text ?? "*error getting content*";
         await db.insert(chatMessages).values({
           id: lastMessage.id as string,
           chatId: id,
-          content:
-            typeof lastMessage.content === "string" ? lastMessage.content : "",
+          content,
           role: lastMessage.role as "assistant",
           createdAt: new Date(),
         });
       }
     },
+    onError(error) {
+      console.error("Error:", error);
+    },
   });
-  console.log("stream", stream);
-
   // Consume the stream to ensure it runs to completion even if client disconnects
   stream.consumeStream();
 

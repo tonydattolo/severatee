@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Message, useChat } from "@ai-sdk/react";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,27 +51,39 @@ export default function ChatUI({ id, initialMessages, chat }: ChatUIProps) {
     initialMessages,
     sendExtraMessageFields: true,
     api: "/api/chat",
-    streamProtocol: "text",
     generateId: createIdGenerator({
       prefix: "msg",
       separator: "_",
       size: 16,
     }),
     onResponse: (response) => {
-      // Clear any previous errors when we get a successful response
       setErrorMessage(null);
       console.log("Got response:", response);
     },
     onError: (error) => {
-      // Set a user-friendly error message
       setErrorMessage("Failed to get a response. Please try again.");
       console.error("Chat error:", error);
     },
     onFinish: () => {
       console.log("Chat finished");
-      // utils.chats.getChatById.invalidate({ id });
     },
   });
+
+  // Add ref for the messages container
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
+  }, []);
+
+  // Scroll when messages change or during streaming
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, status, scrollToBottom]);
 
   useEffect(() => {
     if (initialMessages?.length === 1) {
@@ -127,8 +139,11 @@ export default function ChatUI({ id, initialMessages, chat }: ChatUIProps) {
             </Alert>
           )}
 
-          {/* Messages display area */}
-          <div className="border-lumon-terminal-text/20 bg-lumon-terminal-bg mb-4 max-h-[60vh] overflow-y-auto rounded-xl border p-4">
+          {/* Messages display area - add ref and smooth scrolling */}
+          <div
+            ref={messagesContainerRef}
+            className="border-lumon-terminal-text/20 bg-lumon-terminal-bg mb-4 max-h-[60vh] overflow-y-auto scroll-smooth rounded-xl border p-4"
+          >
             {messages.length === 0 ? (
               <div className="text-lumon-terminal-text/50 flex h-32 items-center justify-center">
                 {chat?.title ?? "New Chat"}
@@ -139,6 +154,7 @@ export default function ChatUI({ id, initialMessages, chat }: ChatUIProps) {
                   key={message.id}
                   className={cn(
                     "mb-4 rounded-lg p-3",
+                    "w-fit max-w-[85%]",
                     message.role === "user"
                       ? "bg-lumon-terminal-text/10 text-lumon-terminal-text ml-auto"
                       : "bg-lumon-terminal-text/5 text-lumon-terminal-text mr-auto",
@@ -146,9 +162,9 @@ export default function ChatUI({ id, initialMessages, chat }: ChatUIProps) {
                 >
                   <div className="flex items-center gap-2">
                     {message.role === "user" ? (
-                      <CircleUserRound className="h-5 w-5" />
+                      <CircleUserRound className="h-5 w-5 shrink-0" />
                     ) : (
-                      <div className="bg-lumon-terminal-text/20 flex h-5 w-5 items-center justify-center rounded-full text-xs">
+                      <div className="bg-lumon-terminal-text/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs">
                         AI
                       </div>
                     )}
@@ -156,7 +172,7 @@ export default function ChatUI({ id, initialMessages, chat }: ChatUIProps) {
                       {message.role === "user" ? "You" : "Assistant"}
                     </span>
                   </div>
-                  <div className="mt-1 text-sm whitespace-pre-wrap">
+                  <div className="mt-1 text-sm break-words whitespace-pre-wrap">
                     {message.content}
                   </div>
                 </div>
