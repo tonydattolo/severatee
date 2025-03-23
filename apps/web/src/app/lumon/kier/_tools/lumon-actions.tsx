@@ -1,5 +1,5 @@
 import { PrivyWalletProvider, PrivyWalletConfig } from "@coinbase/agentkit";
-import { privyWalletProvider } from "@/app/lumon/kier/_utils/privyProvider";
+import { privyWalletProvider } from "@/app/utils/privy/privyProvider";
 import {
   ActionProvider,
   WalletProvider,

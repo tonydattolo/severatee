@@ -27,9 +27,8 @@ export default function SubmitTaskPage({
   const router = useRouter();
 
   const [formData, setFormData] = useState({
-    numbers: "",
-    observations: "",
-    additionalNotes: "",
+    answer: "",
+    progress: 100, // Set to 100 when submitting
   });
 
   // Fetch task details
@@ -53,33 +52,21 @@ export default function SubmitTaskPage({
     },
   });
 
-  // Handle form input changes
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate form
-    if (!formData.numbers.trim() || !formData.observations.trim()) {
+    if (!formData.answer.trim()) {
       toast.error("Validation Error", {
-        description: "Please fill in all required fields.",
+        description: "Please provide an answer for the task.",
       });
       return;
     }
 
-    // Submit task
     submitTaskMutation.mutate({
       taskId,
-      data: formData,
-      metadata: {
-        agentWalletAddress: task?.agent.walletAddress, // Include agent wallet address
-      },
+      answer: formData.answer,
+      progress: formData.progress,
     });
   };
 
@@ -128,7 +115,7 @@ export default function SubmitTaskPage({
 
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>{task.taskType.name}</CardTitle>
+          <CardTitle>{task.name}</CardTitle>
           <CardDescription>
             Please complete the task according to the instructions below.
           </CardDescription>
@@ -137,58 +124,28 @@ export default function SubmitTaskPage({
           <div className="mb-6">
             <h3 className="mb-2 font-semibold">Instructions:</h3>
             <p className="text-sm whitespace-pre-line text-gray-700">
-              {task.taskType.instructions ||
-                "No specific instructions provided."}
+              {task.instructions}
             </p>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
-              <Label htmlFor="numbers" className="mb-2 block">
-                Numbers <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="numbers"
-                name="numbers"
-                placeholder="Enter the numbers..."
-                value={formData.numbers}
-                onChange={handleInputChange}
-                className="mb-1"
-              />
-              <p className="text-xs text-gray-500">
-                Enter the numbers exactly as you see them.
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <Label htmlFor="observations" className="mb-2 block">
-                Observations <span className="text-red-500">*</span>
+              <Label htmlFor="answer" className="mb-2 block">
+                Answer <span className="text-red-500">*</span>
               </Label>
               <Textarea
-                id="observations"
-                name="observations"
-                placeholder="Describe what you observed during the task..."
-                value={formData.observations}
-                onChange={handleInputChange}
+                id="answer"
+                name="answer"
+                placeholder="Enter your answer..."
+                value={formData.answer}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    answer: e.target.value,
+                  }))
+                }
                 rows={5}
                 className="mb-1"
-              />
-              <p className="text-xs text-gray-500">
-                Be detailed and precise in your observations.
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <Label htmlFor="additionalNotes" className="mb-2 block">
-                Additional Notes
-              </Label>
-              <Textarea
-                id="additionalNotes"
-                name="additionalNotes"
-                placeholder="Any additional notes or comments..."
-                value={formData.additionalNotes}
-                onChange={handleInputChange}
-                rows={3}
               />
             </div>
 
@@ -205,7 +162,7 @@ export default function SubmitTaskPage({
                 {submitTaskMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Submit to Lumon
+                Submit Answer
               </Button>
             </div>
           </form>

@@ -12,7 +12,7 @@ import { eq } from "drizzle-orm";
 import { env } from "@/env";
 
 import { getVercelAITools } from "@coinbase/agentkit-vercel-ai-sdk";
-import { privyWalletProvider } from "@/app/lumon/kier/_utils/privyProvider";
+// import { privyWalletProvider } from "@/app/lumon/kier/_utils/privyProvider";
 import {
   AgentKit,
   cdpApiActionProvider,
@@ -22,14 +22,22 @@ import {
   CdpWalletProvider,
 } from "@coinbase/agentkit";
 
+import { PrivyWalletProvider, PrivyWalletConfig } from "@coinbase/agentkit";
+import { privyWalletProvider } from "@/app/utils/privy/privyProvider";
+
 export async function POST(req: Request) {
   const { messages, id } = await req.json();
   console.log("API route hit:", { messages, id });
 
   // const agentKit = await AgentKit.from({
+  //   cdpApiKeyName: process.env.CDP_API_KEY_NAME,
+  //   cdpApiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY,
+  // });
+
+  // const agentKit = await AgentKit.from({
   //   // cdpApiKeyName: env.CDP_API_KEY_NAME,
   //   // cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY,
-  //   walletProvider: privyWalletProvider,
+  // walletProvider: privyWalletProvider,
   //   actionProviders: [
   //     cdpApiActionProvider({
   //       apiKeyName: process.env.CDP_API_KEY_NAME,
@@ -49,15 +57,15 @@ export async function POST(req: Request) {
     // tools,
     // maxSteps: 10,
     model: openai("gpt-4o-mini"),
-    // system: `You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are
-    //   empowered to interact onchain using your tools. If you ever need funds, you can request them from the
-    //   faucet if you are on network ID 'base-sepolia'. If not, you can provide your wallet details and request
-    //   funds from the user. Before executing your first action, get the wallet details to see what network
-    //   you're on. If there is a 5XX (internal) HTTP error code, ask the user to try again later. If someone
-    //   asks you to do something you can't do with your currently available tools, you must say so, and
-    //   encourage them to implement it themselves using the CDP SDK + Agentkit, recommend they go to
-    //   docs.cdp.coinbase.com for more information. Be concise and helpful with your responses. Refrain from
-    //   restating your tools' descriptions unless it is explicitly requested.`,
+    system: `You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are
+      empowered to interact onchain using your tools. If you ever need funds, you can request them from the
+      faucet if you are on network ID 'base-sepolia'. If not, you can provide your wallet details and request
+      funds from the user. Before executing your first action, get the wallet details to see what network
+      you're on. If there is a 5XX (internal) HTTP error code, ask the user to try again later. If someone
+      asks you to do something you can't do with your currently available tools, you must say so, and
+      encourage them to implement it themselves using the CDP SDK + Agentkit, recommend they go to
+      docs.cdp.coinbase.com for more information. Be concise and helpful with your responses. Refrain from
+      restating your tools' descriptions unless it is explicitly requested.`,
     messages,
     experimental_generateMessageId: createIdGenerator({
       prefix: "msg",

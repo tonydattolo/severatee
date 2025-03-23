@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
@@ -12,57 +12,111 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, CheckCircle, AlertCircle, Clock } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Loader2,
+  Plus,
+  Calendar,
+  User,
+  ClipboardList,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+} from "lucide-react";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
-export default function LumonTasksPage() {
+export default function TasksPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("assigned");
+  const [activeTab, setActiveTab] = useState("all");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // Fetch task types
-  const { data: taskTypes, isLoading: loadingTaskTypes } =
-    api.lumon.getTaskTypes.useQuery();
+  // Task form state
+  const [taskForm, setTaskForm] = useState({
+    name: "",
+    instructions: "",
+    agentId: "",
+    dueDate: undefined as Date | undefined,
+    status: "assigned" as const,
+    progress: 0,
+  });
 
-  // Fetch user tasks based on status
+  // Fetch tasks with filters
   const {
     data: tasks,
     isLoading: loadingTasks,
     refetch: refetchTasks,
-  } = api.lumon.getUserTasks.useQuery({
-    profileId: "your-profile-id", // Replace with actual profile ID or get from context
-    status: activeTab === "all" ? undefined : (activeTab as any),
-  });
+  } = api.lumon.getAllTasks.useQuery(
+    activeTab === "all" ? undefined : { status: activeTab as any },
+  );
 
-  // Start task mutation
-  const startTaskMutation = api.lumon.updateTaskStatus.useMutation({
+  // Fetch task types for the form
+  const { data: taskTypes } = api.lumon.getTaskTypes.useQuery();
+
+  // Fetch agents for the form
+  const { data: agents } = api.lumon.getAgents.useQuery();
+
+  // Create task mutation
+  const createTaskMutation = api.lumon.createTask.useMutation({
     onSuccess: () => {
-      refetchTasks();
-      toast.success("Task started", {
-        description: "You have started working on this task.",
+      toast.success("Task created", {
+        description: "The new task has been created successfully.",
       });
+      setTaskForm({
+        name: "",
+        instructions: "",
+        agentId: "",
+        dueDate: undefined,
+        status: "assigned",
+        progress: 0,
+      });
+      setIsCreateDialogOpen(false);
+      refetchTasks();
     },
     onError: (error) => {
-      toast.error("Error", {
+      toast.error("Error creating task", {
         description: error.message,
       });
     },
   });
 
-  // Handle tab change
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
+  // Handle form input changes
+  const handleInputChange = (name: string, value: any) => {
+    setTaskForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle start task
-  const handleStartTask = (taskId: string) => {
-    startTaskMutation.mutate({ taskId, status: "in_progress" });
-  };
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Handle submit task (navigate to submission form)
-  const handleSubmitTask = (taskId: string) => {
-    router.push(`/lumon/tasks/submit/${taskId}`);
+    if (!taskForm.name || !taskForm.instructions || !taskForm.agentId) {
+      toast.error("Validation Error", {
+        description: "Please fill in all fields.",
+      });
+      return;
+    }
+
+    createTaskMutation.mutate(taskForm);
   };
 
   // Status badge component
@@ -98,22 +152,113 @@ export default function LumonTasksPage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="mb-8 text-3xl font-bold">Lumon Tasks</h1>
+    <div className="container mx-auto p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Lumon Tasks</h1>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Task
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Task</DialogTitle>
+              <DialogDescription>
+                Assign a new task to a Lumon agent.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">
+                    Task Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    value={taskForm.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    placeholder="Enter task name"
+                  />
+                </div>
 
-      <Tabs
-        defaultValue="assigned"
-        value={activeTab}
-        onValueChange={handleTabChange}
-      >
+                <div className="grid gap-2">
+                  <Label htmlFor="instructions">
+                    Instructions <span className="text-red-500">*</span>
+                  </Label>
+                  <Textarea
+                    id="instructions"
+                    value={taskForm.instructions}
+                    onChange={(e) =>
+                      handleInputChange("instructions", e.target.value)
+                    }
+                    placeholder="Enter task instructions"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="agentId">
+                    Agent <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={taskForm.agentId}
+                    onValueChange={(value) =>
+                      handleInputChange("agentId", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an agent" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {agents?.map((agent) => (
+                        <SelectItem key={agent.id} value={agent.id}>
+                          {agent.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="dueDate">Due Date</Label>
+                  <DatePicker
+                    date={taskForm.dueDate}
+                    setDate={(date) => handleInputChange("dueDate", date)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createTaskMutation.isPending}>
+                  {createTaskMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Create Task
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
+          <TabsTrigger value="all">All Tasks</TabsTrigger>
           <TabsTrigger value="assigned">Assigned</TabsTrigger>
           <TabsTrigger value="in_progress">In Progress</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="all">All Tasks</TabsTrigger>
+          <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="space-y-4">
+        <TabsContent value={activeTab}>
           {loadingTasks ? (
             <div className="flex h-40 items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -124,60 +269,71 @@ export default function LumonTasksPage() {
                 <Card key={task.id} className="overflow-hidden">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-xl">
-                        {task.taskType.name}
-                      </CardTitle>
+                      <CardTitle>{task.name}</CardTitle>
                       <StatusBadge status={task.status} />
                     </div>
                     <CardDescription>
+                      <div className="mt-2 flex items-center text-sm">
+                        <User className="mr-1 h-4 w-4" />
+                        <span>{task.agent.name}</span>
+                      </div>
                       {task.dueDate && (
-                        <div className="mt-2 flex items-center text-sm">
+                        <div className="mt-1 flex items-center text-sm">
                           <Clock className="mr-1 h-4 w-4" />
-                          Due: {new Date(task.dueDate).toLocaleDateString()}
+                          <span>
+                            Due: {new Date(task.dueDate).toLocaleDateString()}
+                          </span>
                         </div>
                       )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <div className="mb-3">
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Progress</span>
+                        <span>{task.progress}%</span>
+                      </div>
+                      <div className="mt-1 h-2 rounded-full bg-gray-200">
+                        <div
+                          className="h-full rounded-full bg-blue-500"
+                          style={{ width: `${task.progress}%` }}
+                        />
+                      </div>
+                    </div>
                     <p className="text-sm text-gray-600">
-                      {task.taskType.description}
+                      {task.instructions?.substring(0, 100) ||
+                        "No instructions provided."}
+                      {task.instructions &&
+                        task.instructions.length > 100 &&
+                        "..."}
                     </p>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2 bg-gray-50">
-                    {task.status === "assigned" && (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleStartTask(task.id)}
-                        disabled={startTaskMutation.isPending}
-                      >
-                        {startTaskMutation.isPending && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        Start Task
-                      </Button>
-                    )}
-                    {task.status === "in_progress" && (
-                      <Button onClick={() => handleSubmitTask(task.id)}>
-                        Submit Work
-                      </Button>
-                    )}
-                    {task.status === "completed" && (
-                      <Button
-                        variant="outline"
-                        onClick={() =>
-                          router.push(`/lumon/tasks/view/${task.id}`)
-                        }
-                      >
-                        View Submission
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/lumon/tasks/${task.id}`)}
+                    >
+                      View Details
+                    </Button>
                   </CardFooter>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="py-10 text-center">
-              <p className="text-gray-500">No tasks found in this category.</p>
+            <div className="rounded-lg border border-dashed p-8 text-center">
+              <ClipboardList className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium">No Tasks Found</h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Create your first task to get started.
+              </p>
+              <Button
+                className="mt-4"
+                onClick={() => setIsCreateDialogOpen(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Task
+              </Button>
             </div>
           )}
         </TabsContent>

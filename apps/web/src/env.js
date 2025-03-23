@@ -22,6 +22,11 @@ export const env = createEnv({
     PRIVY_WALLET_AUTHORIZATION_PRIVATE_KEY: z.string(),
     PRIVY_LUMON_MANAGER_WALLET_ADDRESS: z.string(),
     PRIVY_LUMON_MANAGER_WALLET_ID: z.string(),
+    NILAI_API_KEY: z.string(),
+    NILAI_API_URL: z.string(),
+    NILLION_ORG_DID: z.string(),
+    NILLION_ORG_PUBLIC_KEY: z.string(),
+    NILLION_ORG_SECRET_KEY: z.string(),
   },
 
   /**
@@ -62,6 +67,11 @@ export const env = createEnv({
     PRIVY_LUMON_MANAGER_WALLET_ADDRESS:
       process.env.PRIVY_LUMON_MANAGER_WALLET_ADDRESS,
     PRIVY_LUMON_MANAGER_WALLET_ID: process.env.PRIVY_LUMON_MANAGER_WALLET_ID,
+    NILAI_API_KEY: process.env.NILAI_API_KEY,
+    NILAI_API_URL: process.env.NILAI_API_URL,
+    NILLION_ORG_DID: process.env.NILLION_ORG_DID,
+    NILLION_ORG_PUBLIC_KEY: process.env.NILLION_ORG_PUBLIC_KEY,
+    NILLION_ORG_SECRET_KEY: process.env.NILLION_ORG_SECRET_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
