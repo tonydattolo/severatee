@@ -102,17 +102,28 @@ export const lumonRouter = createTRPCRouter({
     }),
 
   nillionCreateSchema: authenticatedProcedure.mutation(async ({ ctx }) => {
-    const org = new SecretVaultWrapper(
-      orgConfig.nodes,
-      orgConfig.orgCredentials,
-    );
-    await org.init();
+    try {
+      const org = new SecretVaultWrapper(
+        orgConfig.nodes,
+        orgConfig.orgCredentials,
+      );
+      await org.init();
 
-    // create a new collectionschema
-    const newSchema = await org.createSchema(schema, "Web3 Experience Survey");
-    console.log("📚 New Schema:", newSchema);
+      // create a new collectionschema
+      const newSchema = await org.createSchema(
+        schema,
+        "Web3 Experience Survey",
+      );
+      console.log("📚 New Schema:", newSchema);
 
-    return newSchema;
+      return newSchema;
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Failed to create Nillion schema: ${error}`,
+        cause: error,
+      });
+    }
   }),
 
   // Get all task types
@@ -327,18 +338,15 @@ export const lumonRouter = createTRPCRouter({
         });
 
         if (tasks.length > 0) {
-          // Option 1: Prevent deletion if agent has tasks
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Cannot delete agent with assigned tasks",
-          });
-
-          // Option 2: Delete all associated tasks first (uncomment if you prefer this approach)
-          /*
-          await ctx.db
-            .delete(lumonTasks)
-            .where(eq(lumonTasks.agentId, input.agentId));
-          */
+          for (const task of tasks) {
+            await ctx.db
+              .update(lumonTasks)
+              .set({
+                status: "unassigned",
+                agentId: null,
+              })
+              .where(eq(lumonTasks.id, task.id));
+          }
         }
 
         // Delete the agent
@@ -352,112 +360,6 @@ export const lumonRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to delete agent",
-          cause: error,
-        });
-      }
-    }),
-
-  // Get agent tasks summary
-  getAgentTasksSummary: authenticatedProcedure
-    .input(
-      z.object({
-        agentId: z.string().uuid(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to view task summaries",
-        });
-      }
-
-      try {
-        const agent = await ctx.db.query.lumonAgents.findFirst({
-          where: eq(lumonAgents.id, input.agentId),
-        });
-
-        if (!agent) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Agent not found",
-          });
-        }
-
-        // Get all tasks for this agent
-        const tasks = await ctx.db.query.lumonTasks.findMany({
-          where: eq(lumonTasks.agentId, input.agentId),
-        });
-
-        // Calculate summary
-        const summary = {
-          total: tasks.length,
-          assigned: tasks.filter((task) => task.status === "assigned").length,
-          inProgress: tasks.filter((task) => task.status === "in_progress")
-            .length,
-          completed: tasks.filter((task) => task.status === "completed").length,
-          rejected: tasks.filter((task) => task.status === "rejected").length,
-        };
-
-        return summary;
-      } catch (error) {
-        console.error("Error fetching agent tasks summary:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch agent tasks summary",
-          cause: error,
-        });
-      }
-    }),
-
-  // Assign a task to an agent (update the existing endpoint)
-  assignTask: authenticatedProcedure
-    .input(
-      z.object({
-        agentId: z.string().uuid(), // Changed from profileId to agentId
-        dueDate: z.date().optional(),
-        name: z.string().min(1),
-        instructions: z.string().min(1),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to assign tasks",
-        });
-      }
-
-      try {
-        // Check if agent exists
-        const agent = await ctx.db.query.lumonAgents.findFirst({
-          where: eq(lumonAgents.id, input.agentId),
-        });
-
-        if (!agent) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Agent not found",
-          });
-        }
-
-        // Create the task
-        const [task] = await ctx.db
-          .insert(lumonTasks)
-          .values({
-            agentId: input.agentId, // Changed from profileId to agentId
-            dueDate: input.dueDate,
-            name: input.name,
-            instructions: input.instructions,
-          })
-          .returning();
-
-        return task;
-      } catch (error) {
-        console.error("Error assigning task:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to assign task",
           cause: error,
         });
       }
@@ -614,7 +516,7 @@ export const lumonRouter = createTRPCRouter({
   }),
 
   // Get a task submission from Nillion
-  getTaskSubmission: authenticatedProcedure
+  checkCompletedWorkFromNillion: authenticatedProcedure
     .input(
       z.object({
         nillionRecordId: z.string(),
@@ -822,47 +724,6 @@ export const lumonRouter = createTRPCRouter({
       }
     }),
 
-  // Get a single task
-  getUserTask: authenticatedProcedure
-    .input(
-      z.object({
-        taskId: z.string().uuid(),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to view tasks",
-        });
-      }
-
-      try {
-        const task = await ctx.db.query.lumonTasks.findFirst({
-          where: eq(lumonTasks.id, input.taskId),
-          with: {
-            agent: true,
-          },
-        });
-
-        if (!task) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Task not found",
-          });
-        }
-
-        return task;
-      } catch (error) {
-        console.error("Error fetching task:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch task",
-          cause: error,
-        });
-      }
-    }),
-
   // Submit a task answer
   submitTaskAnswer: authenticatedProcedure
     .input(
@@ -945,66 +806,4 @@ export const lumonRouter = createTRPCRouter({
         });
       }
     }),
-
-  // Update task status and progress
-  updateTaskStatus: authenticatedProcedure
-    .input(
-      z.object({
-        taskId: z.string().uuid(),
-        status: z.enum(["assigned", "in_progress", "completed", "rejected"]),
-        progress: z.number().min(0).max(100).optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to update tasks",
-        });
-      }
-
-      try {
-        const task = await ctx.db.query.lumonTasks.findFirst({
-          where: eq(lumonTasks.id, input.taskId),
-        });
-
-        if (!task) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Task not found",
-          });
-        }
-
-        await ctx.db
-          .update(lumonTasks)
-          .set({
-            status: input.status,
-            progress: input.progress ?? task.progress,
-            updatedAt: new Date(),
-          })
-          .where(eq(lumonTasks.id, input.taskId));
-
-        return { success: true };
-      } catch (error) {
-        console.error("Error updating task status:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update task status",
-          cause: error,
-        });
-      }
-    }),
-
-  createLumonSchema: protectedProcedure.mutation(async () => {
-    try {
-      const result = await createLumonTaskSchema();
-      return result; // Return the schema creation output
-    } catch (error) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create Nillion schema",
-        cause: error,
-      });
-    }
-  }),
 });
