@@ -1,12 +1,12 @@
 {
     "_id": "lumon-tasks-schema",
-    "name": "Lumon Tasks Submissions",
+    "name": "Lumon Tasks",
     "keys": [
         "_id"
     ],
     "schema": {
         "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Lumon Task Submission",
+        "title": "Lumon Task",
         "type": "array",
         "items": {
             "type": "object",
@@ -17,10 +17,6 @@
                     "coerce": true
                 },
                 "taskId": {
-                    "type": "string",
-                    "format": "uuid"
-                },
-                "taskTypeId": {
                     "type": "string",
                     "format": "uuid"
                 },
@@ -35,7 +31,18 @@
                     "type": "string",
                     "format": "date-time"
                 },
-                "data": {
+                "answer": {
+                    "type": "object",
+                    "properties": {
+                        "%share": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "%share"
+                    ]
+                },
+                "signature": {
                     "type": "object",
                     "properties": {
                         "%share": {
@@ -54,17 +61,39 @@
                         },
                         "agentName": {
                             "type": "string"
+                        },
+                        "progress": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100
+                        },
+                        "status": {
+                            "type": "string",
+                            "enum": [
+                                "assigned",
+                                "in_progress",
+                                "completed",
+                                "rejected"
+                            ]
                         }
-                    }
+                    },
+                    "required": [
+                        "taskName",
+                        "agentName",
+                        "progress",
+                        "status"
+                    ]
                 }
             },
             "required": [
                 "_id",
                 "taskId",
-                "taskTypeId",
                 "agentId",
+                "agentWalletAddress",
                 "submittedAt",
-                "data"
+                "answer",
+                "signature",
+                "metadata"
             ]
         }
     }

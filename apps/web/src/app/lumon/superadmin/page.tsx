@@ -12,7 +12,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Wallet, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  Wallet,
+  AlertCircle,
+  DatabaseIcon,
+  CheckCircle,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function SuperAdminPage() {
@@ -29,10 +35,15 @@ export default function SuperAdminPage() {
       >
         <TabsList className="mb-8 grid grid-cols-3">
           <TabsTrigger value="wallets">Wallet Management</TabsTrigger>
+          <TabsTrigger value="nillion">Nillion Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="wallets">
           <WalletManagement />
+        </TabsContent>
+
+        <TabsContent value="nillion">
+          <NillionManagement />
         </TabsContent>
 
         {/* <TabsContent value="system">
@@ -150,6 +161,95 @@ function WalletManagement() {
             Wallet listing and management functionality will be implemented
             here.
           </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function NillionManagement() {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [schemaOutput, setSchemaOutput] = useState<any>(null);
+
+  const createSchemaMutation = api.nillion.createLumonSchema.useMutation({
+    onSuccess: (data) => {
+      setSuccess(true);
+      setSchemaOutput(data);
+      setError(null);
+    },
+    onError: (err) => {
+      setError(err.message);
+      setSuccess(false);
+      setSchemaOutput(null);
+    },
+  });
+
+  const handleCreateSchema = async () => {
+    try {
+      createSchemaMutation.mutate();
+    } catch (err) {
+      setError("Failed to create Nillion schema");
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="grid gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Nillion Schema Management</CardTitle>
+          <CardDescription>
+            Create and manage Nillion schemas for Lumon
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <Button
+              onClick={handleCreateSchema}
+              disabled={createSchemaMutation.isPending}
+              className="w-fit"
+            >
+              {createSchemaMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Schema...
+                </>
+              ) : (
+                <>
+                  <DatabaseIcon className="mr-2 h-4 w-4" />
+                  Create Lumon Task Schema
+                </>
+              )}
+            </Button>
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert variant="default" className="bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertTitle className="text-green-600">Success</AlertTitle>
+                <AlertDescription className="text-green-600">
+                  Lumon Task schema created successfully in Nillion
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {schemaOutput && (
+              <div className="mt-4 rounded-md border bg-slate-50 p-4">
+                <h3 className="mb-2 font-medium">Schema Creation Output:</h3>
+                <pre className="text-sm whitespace-pre-wrap">
+                  {JSON.stringify(schemaOutput, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

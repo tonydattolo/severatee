@@ -4,6 +4,7 @@ import {
   createTRPCRouter,
   authenticatedProcedure,
   publicProcedure,
+  protectedProcedure,
 } from "@/server/api/trpc";
 import { chats, chatMessages } from "@/server/db/schemas/chats_schemas";
 import { eq, desc, and, isNull } from "drizzle-orm";
@@ -25,6 +26,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
+import { createLumonTaskSchema } from "@/app/lumon/kier/_utils/nillion-create-schema";
 
 const nilaiClient = new OpenAI({
   baseURL: "https://nilai-a779.nillion.network/v1",
@@ -992,4 +994,17 @@ export const lumonRouter = createTRPCRouter({
         });
       }
     }),
+
+  createLumonSchema: protectedProcedure.mutation(async () => {
+    try {
+      const result = await createLumonTaskSchema();
+      return result; // Return the schema creation output
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to create Nillion schema",
+        cause: error,
+      });
+    }
+  }),
 });

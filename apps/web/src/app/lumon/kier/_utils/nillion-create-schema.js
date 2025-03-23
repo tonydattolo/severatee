@@ -11,13 +11,14 @@ export async function createLumonTaskSchema() {
     await org.init();
 
     // create a new collectionschema
-    const newSchema = await org.createSchema(schema, "Web3 Experience Survey");
+    const newSchema = await org.createSchema(schema, "Lumon Tasks");
     console.log("📚 New Schema:", newSchema);
+    return newSchema;
   } catch (error) {
     console.error(
       "❌ Failed to use SecretVaultWrapper:",
       JSON.stringify(error),
     );
-    process.exit(1);
+    throw error;
   }
 }
