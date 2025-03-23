@@ -110,15 +110,15 @@ export const lumonRouter = createTRPCRouter({
         const record = {
           _id: recordId,
           taskId: task.id,
-          agentId: task.agentId, // Changed from profileId to agentId
-          agentWalletAddress: task.agent.walletAddress, // Added agent wallet address
+          agentId: task.agentId,
+          agentWalletAddress: task?.agent?.walletAddress,
           submittedAt: new Date().toISOString(),
           data: {
             "%share": JSON.stringify(input.data),
           },
           metadata: {
             taskName: task.name,
-            agentName: task.agent.name, // Changed from profile.name to agent.name
+            agentName: task?.agent?.name,
             ...input.metadata,
           },
         };

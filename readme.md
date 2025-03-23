@@ -1,5 +1,7 @@
 # SeveraTEE - ETH Global Trifecta 2025
 
+note: you must fill in the .env file with the correct values for the project to work.
+
 ## Overview
 
 Core Sponsors: Privy, Nillion, Coinbase Developer Platform
