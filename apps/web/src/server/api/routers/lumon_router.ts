@@ -103,40 +103,40 @@ export const lumonRouter = createTRPCRouter({
           orgConfig.nodes,
           orgConfig.orgCredentials,
         );
-        // await org.init();
+        await org.init();
 
-        // // Create a record in Nillion
-        // const recordId = uuidv4();
-        // const record = {
-        //   _id: recordId,
-        //   taskId: task.id,
-        //   agentId: task.agentId, // Changed from profileId to agentId
-        //   agentWalletAddress: task.agent.walletAddress, // Added agent wallet address
-        //   submittedAt: new Date().toISOString(),
-        //   data: {
-        //     "%share": JSON.stringify(input.data),
-        //   },
-        //   metadata: {
-        //     taskName: task.name,
-        //     agentName: task.agent.name, // Changed from profile.name to agent.name
-        //     ...input.metadata,
-        //   },
-        // };
+        // Create a record in Nillion
+        const recordId = uuidv4();
+        const record = {
+          _id: recordId,
+          taskId: task.id,
+          agentId: task.agentId, // Changed from profileId to agentId
+          agentWalletAddress: task.agent.walletAddress, // Added agent wallet address
+          submittedAt: new Date().toISOString(),
+          data: {
+            "%share": JSON.stringify(input.data),
+          },
+          metadata: {
+            taskName: task.name,
+            agentName: task.agent.name, // Changed from profile.name to agent.name
+            ...input.metadata,
+          },
+        };
 
-        // // Store the record in Nillion
-        // await org.storeRecord(taskSchema.name, record);
+        // Store the record in Nillion
+        await org.storeRecord(taskSchema.name, record);
 
-        // // Update the task status and record ID
-        // await ctx.db
-        //   .update(lumonTasks)
-        //   .set({
-        //     status: "completed",
-        //     completedAt: new Date(),
-        //     nillionRecordId: recordId,
-        //     updatedAt: new Date(),
-        //     progress: 100,
-        //   })
-        //   .where(eq(lumonTasks.id, input.taskId));
+        // Update the task status and record ID
+        await ctx.db
+          .update(lumonTasks)
+          .set({
+            status: "completed",
+            completedAt: new Date(),
+            nillionRecordId: recordId,
+            updatedAt: new Date(),
+            progress: 100,
+          })
+          .where(eq(lumonTasks.id, input.taskId));
 
         return { signature, answer, success: true };
       } catch (error) {
