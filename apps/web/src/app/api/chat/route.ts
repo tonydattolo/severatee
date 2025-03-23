@@ -29,33 +29,26 @@ export async function POST(req: Request) {
   const { messages, id } = await req.json();
   console.log("API route hit:", { messages, id });
 
-  // const agentKit = await AgentKit.from({
-  //   cdpApiKeyName: process.env.CDP_API_KEY_NAME,
-  //   cdpApiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY,
-  // });
+  const agentKit = await AgentKit.from({
+    // cdpApiKeyName: env.CDP_API_KEY_NAME,
+    // cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY,
+    walletProvider: privyWalletProvider,
+    actionProviders: [
+      cdpApiActionProvider({
+        apiKeyName: process.env.CDP_API_KEY_NAME,
+        apiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY,
+      }),
+      erc721ActionProvider(),
+      pythActionProvider(),
+      walletActionProvider(),
+    ],
+  });
 
-  // const agentKit = await AgentKit.from({
-  //   // cdpApiKeyName: env.CDP_API_KEY_NAME,
-  //   // cdpApiKeyPrivateKey: env.CDP_API_KEY_PRIVATE_KEY,
-  // walletProvider: privyWalletProvider,
-  //   actionProviders: [
-  //     cdpApiActionProvider({
-  //       apiKeyName: process.env.CDP_API_KEY_NAME,
-  //       apiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY,
-  //     }),
-  //     erc721ActionProvider(),
-  //     pythActionProvider(),
-  //     walletActionProvider(),
-  //   ],
-  // });
-  // console.log("agentKit", agentKit);
-
-  // const tools = await getVercelAITools(agentKit);
-  // console.log("tools", tools);
+  const tools = await getVercelAITools(agentKit);
 
   const stream = streamText({
-    // tools,
-    // maxSteps: 10,
+    tools,
+    maxSteps: 10,
     model: openai("gpt-4o-mini"),
     system: `You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are
       empowered to interact onchain using your tools. If you ever need funds, you can request them from the

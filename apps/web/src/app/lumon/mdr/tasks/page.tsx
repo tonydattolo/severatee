@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 
 export default function TasksPage() {
   const router = useRouter();
@@ -69,9 +70,6 @@ export default function TasksPage() {
   } = api.lumon.getAllTasks.useQuery(
     activeTab === "all" ? undefined : { status: activeTab as any },
   );
-
-  // Fetch task types for the form
-  const { data: taskTypes } = api.lumon.getTaskTypes.useQuery();
 
   // Fetch agents for the form
   const { data: agents } = api.lumon.getAgents.useQuery();
@@ -124,25 +122,37 @@ export default function TasksPage() {
     switch (status) {
       case "assigned":
         return (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+          <Badge
+            variant="outline"
+            className="bg-lumon-light-blue text-lumon-blue"
+          >
             Assigned
           </Badge>
         );
       case "in_progress":
         return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+          <Badge
+            variant="outline"
+            className="bg-lumon-light-blue text-lumon-blue"
+          >
             In Progress
           </Badge>
         );
       case "completed":
         return (
-          <Badge variant="outline" className="bg-green-50 text-green-700">
+          <Badge
+            variant="outline"
+            className="bg-lumon-light-blue text-lumon-blue"
+          >
             Completed
           </Badge>
         );
       case "rejected":
         return (
-          <Badge variant="outline" className="bg-red-50 text-red-700">
+          <Badge
+            variant="outline"
+            className="bg-lumon-light-blue text-lumon-blue"
+          >
             Rejected
           </Badge>
         );
@@ -273,10 +283,12 @@ export default function TasksPage() {
                       <StatusBadge status={task.status} />
                     </div>
                     <CardDescription>
-                      <div className="mt-2 flex items-center text-sm">
-                        <User className="mr-1 h-4 w-4" />
-                        <span>{task.agent.name}</span>
-                      </div>
+                      {task.agent && (
+                        <div className="mt-2 flex items-center text-sm">
+                          <User className="mr-1 h-4 w-4" />
+                          <span>{task.agent.name}</span>
+                        </div>
+                      )}
                       {task.dueDate && (
                         <div className="mt-1 flex items-center text-sm">
                           <Clock className="mr-1 h-4 w-4" />
@@ -293,12 +305,7 @@ export default function TasksPage() {
                         <span>Progress</span>
                         <span>{task.progress}%</span>
                       </div>
-                      <div className="mt-1 h-2 rounded-full bg-gray-200">
-                        <div
-                          className="h-full rounded-full bg-blue-500"
-                          style={{ width: `${task.progress}%` }}
-                        />
-                      </div>
+                      <Progress value={task.progress} className="mt-1" />
                     </div>
                     <p className="text-sm text-gray-600">
                       {task.instructions?.substring(0, 100) ||
@@ -308,11 +315,13 @@ export default function TasksPage() {
                         "..."}
                     </p>
                   </CardContent>
-                  <CardFooter className="flex justify-end gap-2 bg-gray-50">
+                  <CardFooter className="flex justify-end gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => router.push(`/lumon/tasks/${task.id}`)}
+                      onClick={() =>
+                        router.push(`/lumon/mdr/tasks/view/${task.id}`)
+                      }
                     >
                       View Details
                     </Button>

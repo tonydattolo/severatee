@@ -4,7 +4,6 @@ import {
   createTRPCRouter,
   authenticatedProcedure,
   publicProcedure,
-  protectedProcedure,
 } from "@/server/api/trpc";
 import { chats, chatMessages } from "@/server/db/schemas/chats_schemas";
 import { eq, desc, and, isNull } from "drizzle-orm";
@@ -13,28 +12,27 @@ import { privyClient } from "@/app/lumon/kier/_utils/privyClient";
 import { env } from "@/env";
 import { SecretVaultWrapper } from "secretvaults";
 import { orgConfig } from "@/app/lumon/kier/_utils/nillion.config.js";
-import schema from "@/app/lumon/kier/_utils/lumon-task-schema.json";
+// import schema from "@/app/lumon/kier/_utils/lumon-task-schema.json";
 import taskSchema from "@/app/lumon/kier/_utils/lumon-task-schema.json";
 import {
   lumonTasks,
-  lumonTaskSubmissions,
   lumonAgents,
   insertLumonTaskSchema,
-  insertLumonTaskSubmissionSchema,
   insertLumonAgentSchema,
+  lumonNillionSchemas,
 } from "@/server/db/schemas/lumon_schemas";
 import { v4 as uuidv4 } from "uuid";
 import { NextResponse } from "next/server";
 import { OpenAI } from "openai";
-import { createLumonTaskSchema } from "@/app/lumon/kier/_utils/nillion-create-schema";
+import testSchema from "@/app/lumon/kier/_utils/nillion.schema.example.json";
 
 const nilaiClient = new OpenAI({
   baseURL: "https://nilai-a779.nillion.network/v1",
-  apiKey: env.NILAI_API_KEY || "YOUR_API_KEY_HERE",
+  apiKey: env.NILAI_API_KEY,
 });
 
 export const lumonRouter = createTRPCRouter({
-  nilaiChat: authenticatedProcedure
+  mysteriousAndImportantWork: authenticatedProcedure
     .input(
       z.object({
         taskId: z.string().uuid(),
@@ -43,9 +41,31 @@ export const lumonRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // Get the latest schema ID from our database
+        const latestSchema = await ctx.db.query.lumonNillionSchemas.findFirst({
+          orderBy: [desc(lumonNillionSchemas.createdAt)],
+        });
+
+        if (!latestSchema) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No Nillion schema found. Please create one first.",
+          });
+        }
+
         const task = await ctx.db.query.lumonTasks.findFirst({
           where: eq(lumonTasks.id, input.taskId),
+          with: {
+            agent: true,
+          },
         });
+
+        if (!task || !task.agent) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Task or agent not found",
+          });
+        }
 
         const instructions = `
         You are a helpful assistant that can answer questions and help with tasks.
@@ -71,9 +91,7 @@ export const lumonRouter = createTRPCRouter({
         // Every SecretLLM response includes a cryptographic signature for verification
         console.log(`Signature: ${response.signature}`);
         console.log(`Response: ${response.choices[0]?.message.content}`);
-        // const data = await response.json();
-
-        const signature = response.choices[0]?.message.content;
+        const signature = response.signature;
         const answer = response.choices[0]?.message.content;
 
         if (!signature || !answer) {
@@ -94,7 +112,47 @@ export const lumonRouter = createTRPCRouter({
           })
           .where(eq(lumonTasks.id, input.taskId));
 
-        return { signature, answer };
+        const org = new SecretVaultWrapper(
+          orgConfig.nodes,
+          orgConfig.orgCredentials,
+        );
+        await org.init();
+
+        // Create a record in Nillion
+        const recordId = uuidv4();
+        const record = {
+          _id: recordId,
+          taskId: task.id,
+          agentId: task.agentId,
+          agentWalletAddress: task.agent.walletAddress,
+          submittedAt: new Date().toISOString(),
+          data: {
+            "%share": JSON.stringify({ message: input.message }),
+          },
+          metadata: {
+            taskName: task.name,
+            agentName: task.agent.name,
+          },
+        };
+
+        // Store the record using the latest schema
+        await org.storeRecord(latestSchema.schemaId, record);
+
+        // Update the task status and record ID
+        await ctx.db
+          .update(lumonTasks)
+          .set({
+            signature,
+            answer,
+            status: "completed",
+            progress: 100,
+            completedAt: new Date(),
+            nillionRecordId: recordId,
+            updatedAt: new Date(),
+          })
+          .where(eq(lumonTasks.id, input.taskId));
+
+        return { signature, answer, recordId, success: true };
       } catch (error) {
         console.error("Chat error:", error);
         return { error: "Failed to process chat request" };
@@ -109,12 +167,49 @@ export const lumonRouter = createTRPCRouter({
       );
       await org.init();
 
-      // create a new collectionschema
-      const newSchema = await org.createSchema(
-        schema,
-        "Web3 Experience Survey",
+      // Create schema in Nillion
+      const newSchema = await org.createSchema(taskSchema, "Lumon Task Schema");
+      console.log("Lumon Task Schema created:", newSchema);
+
+      // Extract schema ID from the first node response
+      const schemaId = newSchema[0]?.schemaId;
+
+      if (!schemaId) {
+        throw new Error("Failed to get schema ID from Nillion response");
+      }
+
+      // Store schema details in our database
+      const [storedSchema] = await ctx.db
+        .insert(lumonNillionSchemas)
+        .values({
+          name: "Lumon Task Schema",
+          schemaId: schemaId,
+        })
+        .returning();
+
+      return {
+        nillionResponse: newSchema,
+        storedSchema,
+      };
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: `Failed to create Nillion schema: ${error}`,
+        cause: error,
+      });
+    }
+  }),
+
+  nillionCreateTestSchema: authenticatedProcedure.mutation(async ({ ctx }) => {
+    try {
+      const org = new SecretVaultWrapper(
+        orgConfig.nodes,
+        orgConfig.orgCredentials,
       );
-      console.log("📚 New Schema:", newSchema);
+      await org.init();
+
+      const newSchema = await org.createSchema(testSchema, "Test Schema");
+      console.log("📚 Test Schema:", newSchema);
 
       return newSchema;
     } catch (error) {
@@ -403,89 +498,6 @@ export const lumonRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch agent tasks",
-          cause: error,
-        });
-      }
-    }),
-
-  // Submit a task to Nillion
-  submitTask: authenticatedProcedure
-    .input(
-      z.object({
-        taskId: z.string().uuid(),
-        data: z.record(z.any()), // The task data to be encrypted and stored in Nillion
-        metadata: z.record(z.any()).optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to submit tasks",
-        });
-      }
-
-      try {
-        // Get the task with related data
-        const task = await ctx.db.query.lumonTasks.findFirst({
-          where: eq(lumonTasks.id, input.taskId),
-          with: {
-            agent: true, // Changed from profile to agent
-          },
-        });
-
-        if (!task) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Task not found",
-          });
-        }
-
-        // Initialize Nillion
-        const org = new SecretVaultWrapper(
-          orgConfig.nodes,
-          orgConfig.orgCredentials,
-        );
-        await org.init();
-
-        // Create a record in Nillion
-        const recordId = uuidv4();
-        const record = {
-          _id: recordId,
-          taskId: task.id,
-          agentId: task.agentId, // Changed from profileId to agentId
-          agentWalletAddress: task.agent.walletAddress, // Added agent wallet address
-          submittedAt: new Date().toISOString(),
-          data: {
-            "%share": JSON.stringify(input.data),
-          },
-          metadata: {
-            taskName: task.name,
-            agentName: task.agent.name, // Changed from profile.name to agent.name
-            ...input.metadata,
-          },
-        };
-
-        // Store the record in Nillion
-        await org.storeRecord(taskSchema.name, record);
-
-        // Update the task status and record ID
-        await ctx.db
-          .update(lumonTasks)
-          .set({
-            status: "completed",
-            completedAt: new Date(),
-            nillionRecordId: recordId,
-            updatedAt: new Date(),
-          })
-          .where(eq(lumonTasks.id, input.taskId));
-
-        return { success: true, recordId };
-      } catch (error) {
-        console.error("Error submitting task:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to submit task",
           cause: error,
         });
       }
@@ -781,7 +793,7 @@ export const lumonRouter = createTRPCRouter({
         };
 
         // Store the record in Nillion
-        await org.storeRecord(schema.name, record);
+        await org.storeRecord(taskSchema.name, record);
 
         // Update the task
         await ctx.db

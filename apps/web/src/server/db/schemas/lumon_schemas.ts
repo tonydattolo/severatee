@@ -56,6 +56,17 @@ export const lumonTasks = pgTable("lumon_tasks", {
   metadata: jsonb("metadata"),
 });
 
+// Add this near the other schema definitions
+export const lumonNillionSchemas = pgTable("lumon_nillion_schemas", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  schemaId: varchar("schema_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdateFn(() => new Date()),
+});
+
 // Relations
 export const lumonAgentsRelations = relations(lumonAgents, ({ many }) => ({
   tasks: many(lumonTasks),
@@ -75,8 +86,18 @@ export const selectLumonAgentSchema = createSelectSchema(lumonAgents);
 export const insertLumonTaskSchema = createInsertSchema(lumonTasks);
 export const selectLumonTaskSchema = createSelectSchema(lumonTasks);
 
+export const insertLumonNillionSchemaSchema =
+  createInsertSchema(lumonNillionSchemas);
+export const selectLumonNillionSchemaSchema =
+  createSelectSchema(lumonNillionSchemas);
+
 export type LumonAgent = z.infer<typeof selectLumonAgentSchema>;
 export type LumonTask = z.infer<typeof selectLumonTaskSchema>;
 
 export type NewLumonAgent = z.infer<typeof insertLumonAgentSchema>;
 export type NewLumonTask = z.infer<typeof insertLumonTaskSchema>;
+
+export type LumonNillionSchema = z.infer<typeof selectLumonNillionSchemaSchema>;
+export type NewLumonNillionSchema = z.infer<
+  typeof insertLumonNillionSchemaSchema
+>;

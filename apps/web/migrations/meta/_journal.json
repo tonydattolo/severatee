@@ -57,6 +57,20 @@
       "when": 1742614279106,
       "tag": "0007_big_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1742702586658,
+      "tag": "0008_sparkling_inhumans",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1742706818575,
+      "tag": "0009_unusual_reaper",
+      "breakpoints": true
     }
   ]
 }

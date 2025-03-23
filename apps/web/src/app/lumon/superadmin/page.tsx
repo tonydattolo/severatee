@@ -20,12 +20,13 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 export default function SuperAdminPage() {
   const [activeTab, setActiveTab] = useState("wallets");
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto p-8">
       <h1 className="mb-6 text-3xl font-bold">Lumon Super Admin</h1>
 
       <Tabs
@@ -167,12 +168,31 @@ function WalletManagement() {
   );
 }
 
+const BlurredText = ({ text }: { text: string }) => {
+  const shouldBlur = (text: string) => {
+    // Check for both direct matches and JSON string matches
+    const sensitivePatterns = [
+      /https:\/\/nildb-[^"]*\.nillion\.network/,
+      /did:nil:testnet:[^"']*/,
+    ];
+    return sensitivePatterns.some((pattern) => pattern.test(text));
+  };
+
+  // If the line contains sensitive info, blur the whole line
+  const isBlurred = shouldBlur(text);
+  return (
+    <span className={cn("font-mono", isBlurred && "blur-[4px] select-none")}>
+      {text}
+    </span>
+  );
+};
+
 function NillionManagement() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const [schemaOutput, setSchemaOutput] = useState<any>(null);
 
-  const createSchemaMutation = api.nillion.createLumonSchema.useMutation({
+  const createSchemaMutation = api.lumon.nillionCreateSchema.useMutation({
     onSuccess: (data) => {
       setSuccess(true);
       setSchemaOutput(data);
@@ -192,6 +212,18 @@ function NillionManagement() {
       setError("Failed to create Nillion schema");
       console.error(err);
     }
+  };
+
+  const formatSchemaOutput = (output: any) => {
+    if (!output) return [];
+
+    return JSON.stringify(output, null, 2)
+      .split("\n")
+      .map((line) => {
+        // Add extra spaces to maintain JSON formatting
+        const indent = line.match(/^\s*/)?.[0] || "";
+        return `${indent}${line.trim()}`;
+      });
   };
 
   return (
@@ -232,7 +264,7 @@ function NillionManagement() {
             )}
 
             {success && (
-              <Alert variant="default" className="bg-green-50">
+              <Alert variant="default" className="bg-input/30">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-600">Success</AlertTitle>
                 <AlertDescription className="text-green-600">
@@ -242,10 +274,14 @@ function NillionManagement() {
             )}
 
             {schemaOutput && (
-              <div className="mt-4 rounded-md border bg-slate-50 p-4">
+              <div className="bg-input/30 mt-4 rounded-md border p-4">
                 <h3 className="mb-2 font-medium">Schema Creation Output:</h3>
-                <pre className="text-sm whitespace-pre-wrap">
-                  {JSON.stringify(schemaOutput, null, 2)}
+                <pre className="text-sm whitespace-pre">
+                  {formatSchemaOutput(schemaOutput).map((line, i) => (
+                    <div key={i} className="font-mono">
+                      <BlurredText text={line} />
+                    </div>
+                  ))}
                 </pre>
               </div>
             )}
