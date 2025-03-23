@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 // The client you created from the Server-Side Auth instructions
 import { createClient } from "@/app/utils/supabase/server";
 import { cookies } from "next/headers";
-import db from "@/app/utils/db/db";
-import { oauthTokens } from "@/app/utils/db/schemas/oauth_tokens_schema";
+import db from "@/server/db/db";
+import { oauthTokens } from "@/server/db/schemas/oauth_tokens_schema";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
